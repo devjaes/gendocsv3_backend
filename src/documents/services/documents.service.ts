@@ -81,23 +81,27 @@ export class DocumentsService {
       }
       await this.documentsRepository.save(document)
 
-      const savedDocument = await this.documentsRepository.findOneOrFail({
-        where: { id: document.id },
-        relations: {
-          numerationDocument: {
-            council: {
-              attendance: {
-                functionary: true,
-              },
-            },
-          },
-          documentFunctionaries: {
-            functionary: true,
-          },
-          templateProcess: true,
-          user: true,
-        },
-      })
+      const qb = this.documentsRepository.createQueryBuilder('document')
+      qb.leftJoinAndSelect('document.numerationDocument', 'numerationDocument')
+      qb.leftJoinAndSelect('numerationDocument.council', 'council')
+      qb.leftJoinAndSelect('council.attendance', 'attendance')
+      qb.leftJoinAndSelect('attendance.functionary', 'functionary')
+      qb.leftJoinAndSelect('document.user', 'user')
+      qb.leftJoinAndSelect('document.student', 'student')
+      qb.leftJoinAndSelect('document.templateProcess', 'templateProcess')
+      qb.leftJoinAndSelect(
+        'document.documentFunctionaries',
+        'documentFunctionaries',
+      )
+      qb.leftJoinAndSelect('documentFunctionaries.functionary', 'functionarys')
+      qb.where('document.id = :id', { id: document.id })
+
+      const savedDocument = await qb.getOne()
+
+      if (!savedDocument) {
+        await this.numerationDocumentService.remove(numeration.id)
+        throw new Error('Error al crear el documento')
+      }
 
       const generalData = await this.variableService.getGeneralVariables(
         savedDocument,
