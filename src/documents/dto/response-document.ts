@@ -1,4 +1,4 @@
-import { formatNumeration } from '../../shared/utils/string'
+import { formatNumeration, getFullName } from '../../shared/utils/string'
 import { DocumentEntity } from '../entities/document.entity'
 
 export class ResponseDocumentDto {
@@ -9,6 +9,7 @@ export class ResponseDocumentDto {
     this.createdAt = document.createdAt
     this.driveId = document.driveId
     this.userId = document.user.id
+    this.userName = getFullName(document.user)
     this.templateId = document.templateProcess.id
     this.studentId = document.student ? document.student.id : null
     this.functionaries = document.documentFunctionaries
@@ -28,6 +29,7 @@ export class ResponseDocumentDto {
   createdAt: Date
   driveId: string
   userId: number
+  userName: string
   templateId: number
   studentId: number
   functionaries: {

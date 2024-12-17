@@ -1,19 +1,15 @@
 import { Type } from 'class-transformer'
-import { IsDate, IsOptional, IsString } from 'class-validator'
+import { IsDate, IsNumber, IsOptional, IsString } from 'class-validator'
 import { PaginationDTO } from '../../shared/dtos/pagination.dto'
 
 export class DocumentFiltersDto extends PaginationDTO {
   @IsOptional()
+  @IsNumber()
+  moduleId?: number
+
+  @IsOptional()
   @IsString()
   field?: string
-
-  @IsOptional()
-  @IsString()
-  templateName?: string
-
-  @IsOptional()
-  @IsString()
-  councilName?: string
 
   @IsOptional()
   @IsDate()

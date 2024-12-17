@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common'
 import { CreateDocumentDto } from '../dto/create-document.dto'
 import { InjectRepository } from '@nestjs/typeorm'
-import { DataSource, Repository } from 'typeorm'
+import { Brackets, DataSource, Repository } from 'typeorm'
 import { DocumentEntity } from '../entities/document.entity'
 import { NumerationDocumentService } from '../../numeration-document/numeration-document.service'
 import { VariablesService } from '../../variables/variables.service'
@@ -440,8 +440,8 @@ export class DocumentsService {
     }
   }
 
-  async findAll(pagination: DocumentFiltersDto) {
-    const { moduleId, limit, page } = pagination
+  async findAll(filters: DocumentFiltersDto) {
+    const { moduleId, limit, page, order } = filters
 
     const skip = (page - 1) * limit
 
@@ -472,37 +472,71 @@ export class DocumentsService {
         )
         .leftJoinAndSelect('documentFunctionaries.functionary', 'functionarys')
         .where('module.id = :moduleId', { moduleId: Number(moduleId) })
-      if (pagination.field) {
+      // if (filters.field) {
+      //   qb.andWhere(
+      //     "( (:field :: VARCHAR ) IS NULL OR CONCAT_WS(' ', student.firstName, student.secondName, student.firstLastName, student.secondLastName) ILIKE :field OR student.dni ILIKE :field )" +
+      //       // add some functionarie search
+      //       " OR CONCAT_WS(' ', functionarys.firstName, functionarys.secondName, functionarys.firstLastName, functionarys.secondLastName) ILIKE :field" +
+      //       ' OR templateProcess.name ILIKE :field' +
+      //       ' OR council.name ILIKE :field' +
+      //       ' OR numerationDocument.number ILIKE (:field :: INTEGER)',
+      //     {
+      //       field: `%${filters.field}%`,
+      //     },
+      //   )
+      // }
+      if (filters.field) {
+        const searchPattern = `%${filters.field}%`
         qb.andWhere(
-          "( (:field :: VARCHAR ) IS NULL OR CONCAT_WS(' ', student.firstName, student.secondName, student.firstLastName, student.secondLastName) ILIKE :term OR student.dni ILIKE :field )" +
-            // add some functionarie search
-            " OR CONCAT_WS(' ', functionarys.firstName, functionarys.secondName, functionarys.firstLastName, functionarys.secondLastName) ILIKE :field",
-          {
-            field: `%${pagination.field}%`,
-          },
+          new Brackets((qb) => {
+            qb.where(
+              "CONCAT_WS(' ', student.firstName, student.secondName, student.firstLastName, student.secondLastName) ILIKE :field",
+              { field: searchPattern },
+            )
+              .orWhere('student.dni ILIKE :field', { field: searchPattern })
+              .orWhere(
+                "CONCAT_WS(' ', functionarys.firstName, functionarys.secondName, functionarys.firstLastName, functionarys.secondLastName) ILIKE :field",
+                { field: searchPattern },
+              )
+              .orWhere('templateProcess.name ILIKE :field', {
+                field: searchPattern,
+              })
+              .orWhere('council.name ILIKE :field', { field: searchPattern })
+              .orWhere(
+                'CAST(numerationDocument.number AS VARCHAR) ILIKE :field',
+                { field: searchPattern },
+              )
+          }),
         )
       }
 
-      if (pagination.startDate != null && pagination.endDate != null) {
-        if (pagination.startDate && !pagination.endDate) {
+      if (filters.startDate != null && filters.endDate != null) {
+        if (filters.startDate && !filters.endDate) {
           qb.andWhere('document.createdAt >= :startDate', {
-            startDate: pagination.startDate,
+            startDate: filters.startDate,
           })
-        } else if (!pagination.startDate && pagination.endDate) {
-          const endDate = new Date(pagination.endDate)
+        } else if (!filters.startDate && filters.endDate) {
+          const endDate = new Date(filters.endDate)
           endDate.setHours(23, 59, 59, 999)
           qb.andWhere('document.createdAt <= :endDate', {
             endDate,
           })
         } else {
-          const endDate = new Date(pagination.endDate)
+          const endDate = new Date(filters.endDate)
           endDate.setHours(23, 59, 59, 999)
           qb.andWhere('document.createdAt BETWEEN :startDate AND :endDate', {
-            startDate: pagination.startDate,
+            startDate: filters.startDate,
             endDate,
           })
         }
       }
+      qb.orderBy(
+        filters.orderBy ? `document.${filters.orderBy}` : 'document.createdAt',
+        order,
+      )
+
+      const count = await qb.getCount()
+
       qb.skip(skip)
       qb.take(limit)
 
@@ -512,12 +546,6 @@ export class DocumentsService {
         throw new NotFoundException('Documents not found')
       }
 
-      const count = await this.documentsRepository.count({
-        where: {
-          numerationDocument: { council: { module: { id: Number(moduleId) } } },
-        },
-      })
-
       return new ApiResponseDto('Lista de documentos', {
         count,
         documents: documents.map(
@@ -525,6 +553,7 @@ export class DocumentsService {
         ),
       })
     } catch (error) {
+      console.error(error)
       throw new InternalServerErrorException(error.message)
     }
   }
@@ -600,7 +629,7 @@ export class DocumentsService {
       })
 
       if (!document) {
-        throw new NotFoundException('Document not found')
+        throw new NotFoundException('Documento no encontrado')
       }
 
       const confirmation = await this.numerationDocumentService.documentRemoved(
@@ -608,7 +637,7 @@ export class DocumentsService {
       )
 
       if (!confirmation) {
-        throw new ConflictException('Numeration not updated')
+        throw new ConflictException('Numeración no actualizada')
       }
 
       await this.filesService.remove(document.driveId)
