@@ -472,19 +472,7 @@ export class DocumentsService {
         )
         .leftJoinAndSelect('documentFunctionaries.functionary', 'functionarys')
         .where('module.id = :moduleId', { moduleId: Number(moduleId) })
-      // if (filters.field) {
-      //   qb.andWhere(
-      //     "( (:field :: VARCHAR ) IS NULL OR CONCAT_WS(' ', student.firstName, student.secondName, student.firstLastName, student.secondLastName) ILIKE :field OR student.dni ILIKE :field )" +
-      //       // add some functionarie search
-      //       " OR CONCAT_WS(' ', functionarys.firstName, functionarys.secondName, functionarys.firstLastName, functionarys.secondLastName) ILIKE :field" +
-      //       ' OR templateProcess.name ILIKE :field' +
-      //       ' OR council.name ILIKE :field' +
-      //       ' OR numerationDocument.number ILIKE (:field :: INTEGER)',
-      //     {
-      //       field: `%${filters.field}%`,
-      //     },
-      //   )
-      // }
+
       if (filters.field) {
         const searchPattern = `%${filters.field}%`
         qb.andWhere(

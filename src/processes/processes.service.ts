@@ -130,9 +130,11 @@ export class ProcessesService {
     const { moduleId, limit, page } = paginationDto
     const offset = (page - 1) * limit
 
-    const qb = this.getBaseQuery()
-      .where('module.id = :moduleId', { moduleId })
-      .orderBy('processes.createdAt', 'DESC')
+    const qb = this.getBaseQuery().orderBy('processes.createdAt', 'DESC')
+
+    if (moduleId != null) {
+      qb.where('module.id = :moduleId', { moduleId })
+    }
 
     const count = await qb.clone().getCount()
 
@@ -179,13 +181,19 @@ export class ProcessesService {
     const offset = (page - 1) * limit
 
     const qb = this.getBaseQuery()
-      .where('module.id = :moduleId', { moduleId })
-      .andWhere(
+    if (moduleId != null) {
+      qb.where('module.id = :moduleId', { moduleId })
+    }
+
+    if (filters.state != null) {
+      qb.andWhere(
         '( (:state :: BOOLEAN) IS NULL OR processes.isActive = (:state :: BOOLEAN) )',
         {
           state: filters.state,
         },
       )
+    }
+
     if (field != null && field !== '') {
       qb.andWhere(
         '( (:name :: VARCHAR) IS NULL OR processes.name ILIKE :name  )',

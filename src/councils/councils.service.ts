@@ -168,18 +168,21 @@ export class CouncilsService {
 
     const skip = (page - 1) * limit
 
-    const councils = await this.dataSource
+    const qb = this.dataSource
       .createQueryBuilder(CouncilEntity, 'councils')
       .leftJoinAndSelect('councils.user', 'user')
       .leftJoinAndSelect('councils.module', 'module')
       .leftJoinAndSelect('councils.submoduleYearModule', 'submoduleYearModule')
       .leftJoinAndSelect('councils.attendance', 'attendance')
       .leftJoinAndSelect('attendance.functionary', 'functionary')
-      .where('module.id = :moduleId', { moduleId })
-      .orderBy('councils.createdAt', 'DESC')
-      .take(limit)
-      .skip(skip)
-      .getMany()
+    if (moduleId) {
+      qb.where('module.id = :moduleId', { moduleId })
+    }
+    qb.orderBy('councils.createdAt', 'DESC')
+    qb.take(limit)
+    qb.skip(skip)
+
+    const councils = await qb.getMany()
 
     const count = await this.dataSource
       .createQueryBuilder(CouncilEntity, 'councils')
