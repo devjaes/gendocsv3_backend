@@ -12,6 +12,7 @@ export class ResponseDocumentDto {
     this.userName = getFullName(document.user)
     this.templateId = document.templateProcess.id
     this.studentId = document.student ? document.student.id : null
+    this.studentName = document.student ? getFullName(document.student) : null
     this.functionaries = document.documentFunctionaries
       ? document.documentFunctionaries.map((docFunctionary) => ({
           id: docFunctionary.functionary.id,
@@ -32,6 +33,7 @@ export class ResponseDocumentDto {
   userName: string
   templateId: number
   studentId: number
+  studentName: string
   functionaries: {
     id: number
     functionaryNotified: boolean

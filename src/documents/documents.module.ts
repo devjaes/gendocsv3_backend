@@ -12,6 +12,7 @@ import { DocumentRecopilationService } from './services/document-recopilation.se
 import { NotificationsModule } from '../notifications/notifications.module'
 import { BullModule } from '@nestjs/bull'
 import { DOCUMENT_QUEUE_NAME } from './constants'
+import { EmailModule } from '../email/email.module'
 
 @Module({
   controllers: [DocumentsController],
@@ -24,6 +25,7 @@ import { DOCUMENT_QUEUE_NAME } from './constants'
     VariablesModule,
     FilesModule,
     NotificationsModule,
+    EmailModule,
   ],
   providers: [DocumentsService, DocumentRecopilationService, DocumentProcessor],
   exports: [DocumentsService],

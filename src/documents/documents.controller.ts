@@ -8,6 +8,7 @@ import {
   ParseIntPipe,
   Query,
   HttpException,
+  Patch,
 } from '@nestjs/common'
 import { DocumentsService } from './services/documents.service'
 import { CreateDocumentDto } from './dto/create-document.dto'
@@ -99,5 +100,13 @@ export class DocumentsController {
       // eslint-disable-next-line no-magic-numbers
       return new HttpException('Error al descargar el archivo', 500)
     }
+  }
+
+  @Patch('notify-student/:id')
+  async notifyStudent(
+    @Param('id', ParseIntPipe) id: number,
+    @Query('whatsapp') whatsapp = false,
+  ) {
+    return await this.documentsService.notifyStudent(id, whatsapp)
   }
 }

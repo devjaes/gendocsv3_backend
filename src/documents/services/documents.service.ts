@@ -28,6 +28,8 @@ import { Queue } from 'bull'
 import { NotificationEntity } from '../../notifications/entities/notification.entity'
 import { NotificationsGateway } from '../../notifications/notifications.gateway'
 import { DocumentFiltersDto } from '../dto/document-filters.dto'
+import { EmailService } from '../../email/services/email.service'
+import { getWhatsAppLink } from '../../shared/utils/link'
 
 @Injectable()
 export class DocumentsService {
@@ -48,6 +50,7 @@ export class DocumentsService {
     private readonly numerationDocumentService: NumerationDocumentService,
     private readonly variableService: VariablesService,
     private readonly filesService: FilesService,
+    private readonly emailService: EmailService,
   ) {}
 
   async create(createDocumentDto: CreateDocumentDto) {
@@ -453,6 +456,7 @@ export class DocumentsService {
           'document.createdAt',
           'document.driveId',
           'document.description',
+          'document.studentNotified',
         ])
         .leftJoinAndSelect('document.numerationDocument', 'numerationDocument')
         .leftJoinAndSelect('numerationDocument.council', 'council')
@@ -546,27 +550,41 @@ export class DocumentsService {
     }
   }
 
+  async getOne(id: number) {
+    const document = await this.documentsRepository
+      .createQueryBuilder('document')
+      .select([
+        'document.id',
+        'document.createdAt',
+        'document.driveId',
+        'document.description',
+        'document.variables',
+        'document.studentNotified',
+      ])
+      .leftJoinAndSelect('document.numerationDocument', 'numerationDocument')
+      .leftJoinAndSelect('numerationDocument.council', 'council')
+      .leftJoinAndSelect('council.module', 'module')
+      .leftJoinAndSelect('document.user', 'user')
+      .leftJoinAndSelect('document.student', 'student')
+      .leftJoinAndSelect('document.templateProcess', 'templateProcess')
+      .leftJoinAndSelect(
+        'document.documentFunctionaries',
+        'documentFunctionaries',
+      )
+      .leftJoinAndSelect('documentFunctionaries.functionary', 'functionary')
+      .where('document.id = :id', { id })
+      .getOne()
+
+    if (!document) {
+      throw new NotFoundException('Document not found')
+    }
+
+    return document
+  }
+
   async findOne(id: number) {
     try {
-      const document = await this.documentsRepository
-        .createQueryBuilder('document')
-        .leftJoinAndSelect('document.numerationDocument', 'numerationDocument')
-        .leftJoinAndSelect('numerationDocument.council', 'council')
-        .leftJoinAndSelect('document.user', 'user')
-        .leftJoinAndSelect('document.student', 'student')
-        .leftJoinAndSelect('document.templateProcess', 'templateProcess')
-        .leftJoinAndSelect(
-          'document.documentFunctionaries',
-          'documentFunctionaries',
-        )
-        .leftJoinAndSelect('documentFunctionaries.functionary', 'functionary')
-        .where('document.id = :id', { id })
-        .getOne()
-
-      if (!document) {
-        throw new NotFoundException('Document not found')
-      }
-
+      const document = await this.getOne(id)
       const newDocument = new ResponseDocumentDto(document)
 
       return new ApiResponseDto('Documento encontrado', newDocument)
@@ -638,6 +656,68 @@ export class DocumentsService {
           : 'Error al eliminar el documento',
         {
           success: isDeleted.affected > 0,
+        },
+      )
+    } catch (error) {
+      throw new InternalServerErrorException(error.message)
+    }
+  }
+
+  async notifyStudent(id: number, whatsApp?: boolean) {
+    try {
+      const document = await this.getOne(id)
+
+      if (!document) {
+        throw new NotFoundException('Documento no encontrado')
+      }
+
+      if (!document.student) {
+        throw new ConflictException('Documento no tiene estudiante asignado')
+      }
+
+      const message = `Estimado/a ${document.student.firstName} ${
+        document.student.firstLastName
+      }, le notificamos que su trámite ${
+        document.templateProcess.name
+      } se ha resuelto por medio de ${
+        document.numerationDocument.council.name
+      } - ${
+        document.numerationDocument.council.module.name
+      }. \nPara constancia del mismo se ha generado el documento de resolución número ${formatNumeration(
+        document.numerationDocument.number,
+      )}.`
+
+      if (whatsApp) {
+        if (!document.student.phoneNumber) {
+          throw new ConflictException('Estudiante sin número de teléfono')
+        }
+
+        const wLink = getWhatsAppLink({
+          studentPhoneNumber: document.student.phoneNumber,
+          message,
+        })
+
+        return new ApiResponseDto('Redirigiendo a la ventana de WhatsApp', {
+          link: wLink,
+        })
+      }
+
+      this.emailService.sendEmail({
+        to: document.student.outlookEmail,
+        subject: 'Notificación de documento',
+        body: message,
+      })
+
+      const isNotified = await this.documentsRepository.update(document.id, {
+        studentNotified: true,
+      })
+
+      return new ApiResponseDto(
+        isNotified.affected > 0
+          ? 'Estudiante notificado'
+          : 'Error al notificar al estudiante',
+        {
+          success: isNotified.affected > 0,
         },
       )
     } catch (error) {
