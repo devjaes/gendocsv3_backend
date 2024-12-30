@@ -92,7 +92,7 @@ export class StudentEntity extends BasePerson {
     type: 'smallint',
     nullable: true,
   })
-  approvedCredits: number
+  approvedCredits?: number
 
   @ApiProperty({
     example: true,
@@ -106,14 +106,26 @@ export class StudentEntity extends BasePerson {
   isActive: boolean
 
   @ApiProperty({
-    example: 'Bachiiller en Ciencias',
+    example: 'Bachiller en Ciencias',
     description: 'bachelor_degeree',
   })
   @Column({
     name: 'bachelor_degree',
     type: 'varchar',
+    nullable: true,
   })
   bachelorDegree: string
+
+  @ApiProperty({
+    example: 'Colegio Nacional',
+    description: 'Nombre de la institución de educación secundaria',
+  })
+  @Column({
+    name: 'high_school_name',
+    type: 'varchar',
+    nullable: true,
+  })
+  highSchoolName: string
 
   @ApiProperty({
     example: '2021-07-07',

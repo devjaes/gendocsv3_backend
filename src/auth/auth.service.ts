@@ -8,8 +8,7 @@ import { UsersService } from '../users/users.service'
 import { UserEntity } from '../users/entities/users.entity'
 import { JwtService } from '@nestjs/jwt'
 import { compareSync } from 'bcrypt'
-import { ModuleEntity } from '../modules/entities/modules.entity'
-import { ApiResponseDto } from '../shared/dtos/api-response.dto'
+import { ModuleEntity } from '../modules/entities/module.entity'
 import { EmailService } from '../email/services/email.service'
 import { IPayload } from './types/payload.interface'
 
@@ -33,6 +32,10 @@ export class AuthService {
       (module: ModuleEntity) => module.id,
     )
 
+    const accessCareersDegCert = user.accessCareersDegCert.map(
+      (career) => career.id,
+    )
+
     const payload: IPayload = {
       sub: user.id,
       outlookEmail: user.outlookEmail,
@@ -44,12 +47,10 @@ export class AuthService {
       role: user.role,
       isActive: user.isActive,
       accessModules,
+      accessCareersDegCert,
     }
 
-    return new ApiResponseDto(
-      `Hola de nuevo, ${user.firstName} ${user.firstLastName}!`,
-      this.jwtService.sign(payload),
-    )
+    return this.jwtService.sign(payload)
   }
 
   async forgotPassword(email: string) {

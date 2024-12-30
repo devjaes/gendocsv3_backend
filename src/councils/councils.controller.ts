@@ -14,7 +14,7 @@ import { ApiResponse, ApiTags } from '@nestjs/swagger'
 import { CouncilEntity } from './entities/council.entity'
 import { UpdateCouncilDto } from './dto/update-council.dto'
 import { UpdateCouncilBulkItemDto } from './dto/update-councils-bulk.dto'
-import { PaginationDto } from '../shared/dtos/pagination.dto'
+import { PaginationDTO } from '../shared/dtos/pagination.dto'
 import { CouncilFiltersDto } from './dto/council-filters.dto'
 import { ApiResponseDto } from '../shared/dtos/api-response.dto'
 import { Auth } from '../auth/decorators/auth.decorator'
@@ -48,8 +48,8 @@ export class CouncilsController {
   @Auth(...RolesThatCanQuery)
   @ApiResponse({ isArray: true, type: CouncilEntity })
   @Get()
-  async findAll(@Query() paginationDto: PaginationDto) {
-    return this.councilsService.findAllAndCount(paginationDto)
+  async findAll(@Query() pagination: PaginationDTO) {
+    return this.councilsService.findAllAndCount(pagination)
   }
 
   @Auth(...RolesThatCanQuery)
@@ -64,7 +64,10 @@ export class CouncilsController {
   @Auth(...RolesThatCanQuery)
   @Get('filter/f')
   async findByFilters(@Query() filters: CouncilFiltersDto) {
-    return this.councilsService.findByFilters(filters)
+    return new ApiResponseDto(
+      'Consejos encontrados',
+      await this.councilsService.findByFilters(filters),
+    )
   }
 
   @Auth(...RolesThatCanMutate)

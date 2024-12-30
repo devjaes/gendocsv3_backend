@@ -2,7 +2,6 @@ import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm'
 import { BaseAppEntity } from '../../shared/entities/base-app.entity'
 import { ApiProperty } from '@nestjs/swagger'
 import { YearModuleEntity } from './year-module.entity'
-import { ProcessEntity } from '../../processes/entities/process.entity'
 import { DegreeCertificateEntity } from '../../degree-certificates/entities/degree-certificate.entity'
 
 @Entity('submodule_year_module')
@@ -35,14 +34,6 @@ export class SubmoduleYearModuleEntity extends BaseAppEntity {
   @ManyToOne(() => YearModuleEntity, { eager: true, nullable: false })
   @JoinColumn({ name: 'year_module_id' })
   yearModule: YearModuleEntity
-
-  @ApiProperty({
-    example: '1',
-    description: 'Procesos asociados al submódulo',
-    type: () => ProcessEntity,
-  })
-  @OneToMany(() => ProcessEntity, (process) => process.submoduleYearModule)
-  processes: ProcessEntity[]
 
   @OneToMany(
     () => DegreeCertificateEntity,

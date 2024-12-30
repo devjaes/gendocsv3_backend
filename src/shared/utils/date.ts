@@ -9,10 +9,10 @@ export const TIMES = {
 }
 
 export const formatDate = (date: Date): string =>
-  format(date, 'dd/mm/yyyy', { locale: es })
+  format(date, 'dd/MM/yyyy', { locale: es })
 
 export const formatDateTime = (date: Date): string =>
-  format(date, 'dd/mm/yyyy HH:mm', { locale: es })
+  format(date, 'dd/MM/yyyy HH:mm', { locale: es })
 
 export const formatTime = (date: Date): string =>
   format(date, 'HH:mm', { locale: es })
@@ -22,6 +22,18 @@ export const formatDateText = (
   formatStr = "d 'de' MMMM 'de' yyyy",
 ): string => {
   const dateObj = new Date(date)
+
+  // chack if reduces 1 day because of timezone the db stores it as yyyy-MM-dd
+  const isFormatedWithoutTime = date.toString().split('-').length === 3
+
+  if (isFormatedWithoutTime) {
+    const day = date.toString().split('-')[2]
+
+    if (day !== dateObj.getDate().toString()) {
+      dateObj.setDate(parseInt(day))
+    }
+  }
+
   return format(dateObj, formatStr, { locale: es })
 }
 
@@ -46,3 +58,6 @@ export const formatHourMinutesText = (date: Date): string => {
 
 export const addMinutesToDate = (date: Date, minutes: number): Date =>
   new Date(new Date(date).getTime() + minutes * 60000)
+
+export const FIRST_DAY_OF_YEAR = new Date(new Date().getFullYear(), 0, 1)
+export const LAST_DAY_OF_YEAR = new Date(new Date().getFullYear(), 11, 31)

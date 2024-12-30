@@ -20,6 +20,10 @@ import {
   formatNumeration,
   concatNames,
   getFullNameWithTitles,
+  capitalizeEachWord,
+  getThirdLevelDegree,
+  getFourthLevelDegree,
+  getFullNameWithFourthLevelDegreeFirst,
 } from '../shared/utils/string'
 import { DocumentFunctionaryEntity } from '../documents/entities/document-functionary.entity'
 import { DataSource, Repository } from 'typeorm'
@@ -137,7 +141,8 @@ export class VariablesService {
       },
       {
         variable: DEFAULT_VARIABLE.ESTUDIANTE_FECHA_INICIO_ESTUDIOS_FECHAUP,
-        example: '16 de julio de 2010',
+        example:
+          '16 de julio de 2010, (cambio de universidad?) -> 28 de febrero de 2019 en la Escuela Superior Politécnica de Chimborazo ESPOCH, realizó cambio de Universidad según Resolución 1539-P-CD-FISEI-UTA-2019 e ingresa el 24 de marzo de 2019 ',
       },
       {
         variable: DEFAULT_VARIABLE.ESTUDIANTE_FECHA_FIN_ESTUDIOS_FECHAUP,
@@ -257,36 +262,24 @@ export class VariablesService {
     ]
     const degreeCertificateVariables = [
       {
+        variable: GENDER_DESIGNATION_VARIABLE(0),
+        example: 'el señor/ la señorita',
+      },
+      {
         variable: GENDER_DESIGNATION_VARIABLE(1),
-        example: 'el señor',
+        example: 'portador/ portadora',
       },
       {
-        variable:
-          MEMBERS_DESIGNATION[DEGREE_ATTENDANCE_ROLES.PRINCIPAL][
-            ADJECTIVES.PLURAL
-          ],
-        example: 'designados mediante',
+        variable: GENDER_DESIGNATION_VARIABLE(2),
+        example: 'El mencionado señor/ La mencionada señorita',
       },
       {
-        variable:
-          MEMBERS_DESIGNATION[DEGREE_ATTENDANCE_ROLES.PRINCIPAL][
-            ADJECTIVES.SINGULAR
-          ],
-        example: 'designado mediante',
+        variable: GENDER_DESIGNATION_VARIABLE(3),
+        example: 'El mencionado/ La mencionada',
       },
       {
-        variable:
-          MEMBERS_DESIGNATION[DEGREE_ATTENDANCE_ROLES.SUBSTITUTE][
-            ADJECTIVES.PLURAL
-          ],
-        example: 'principalizados mediante',
-      },
-      {
-        variable:
-          MEMBERS_DESIGNATION[DEGREE_ATTENDANCE_ROLES.SUBSTITUTE][
-            ADJECTIVES.SINGULAR
-          ],
-        example: 'principalizado mediante',
+        variable: GENDER_DESIGNATION_VARIABLE(4),
+        example: 'El señor/ La señorita',
       },
       {
         variable: DEGREE_CERTIFICATE_VARIABLES.DEGREE_CERTIFICATE_PRESIDENT,
@@ -299,7 +292,8 @@ export class VariablesService {
       },
       {
         variable: DEGREE_CERTIFICATE_VARIABLES.MEMBERS_DEGREE_CERTIFICATE,
-        example: 'Ing. Juan Pérez',
+        example:
+          'Ing. Juan Pérez principalizado mediante resolución 001 de fecha 16 de julio de 2021, Ing. Juan Pérez principalizado mediante resolución 001 de fecha 16 de julio de 2021',
       },
       {
         variable: DEGREE_CERTIFICATE_VARIABLES.FIRST_MEMBER_DEGREE_CERTIFICATE,
@@ -308,6 +302,30 @@ export class VariablesService {
       {
         variable: DEGREE_CERTIFICATE_VARIABLES.SECOND_MEMBER_DEGREE_CERTIFICATE,
         example: 'Ing. Juan Pérez',
+      },
+      {
+        variable: DEGREE_CERTIFICATE_VARIABLES.FIRST_MEMBER_WITHOUTH_DEGREES,
+        example: 'Juan Pérez',
+      },
+      {
+        variable: DEGREE_CERTIFICATE_VARIABLES.SECOND_MEMBER_WITHOUTH_DEGREES,
+        example: 'Carlos Lopez',
+      },
+      {
+        variable: DEGREE_CERTIFICATE_VARIABLES.FIRST_MEMBER_THIRDL_DEGREE_ABR,
+        example: 'Ing.',
+      },
+      {
+        variable: DEGREE_CERTIFICATE_VARIABLES.SECOND_MEMBER_THIRDL_DEGREE_ABR,
+        example: 'Lic.',
+      },
+      {
+        variable: DEGREE_CERTIFICATE_VARIABLES.FIRST_MEMBER_FOURTHL_DEGREE,
+        example: 'PhD.',
+      },
+      {
+        variable: DEGREE_CERTIFICATE_VARIABLES.SECOND_MEMBER_FOURTHL_DEGREE,
+        example: 'MSc.',
       },
       {
         variable: DEGREE_CERTIFICATE_VARIABLES.CREATED_BY,
@@ -360,9 +378,9 @@ export class VariablesService {
     ]
 
     return new ApiResponseDto('Variables encontradas con éxito', {
-      Posiciones: positionsVariables,
+      Cargos: positionsVariables,
       Estudiantes: studentVariables,
-      Funcionarios: functionariesVariables,
+      Docentes: functionariesVariables,
       Consejos: councilVariables,
       Documentos: documentVariables,
       Actas_de_grado: degreeCertificateVariables,
@@ -537,7 +555,7 @@ export class VariablesService {
       ...document.student.career.coordinator,
     } as FunctionaryEntity
 
-    const startStudiesDateVariable: string = document.student.startStudiesDate
+    let startStudiesDateVariable: string = document.student.startStudiesDate
       ? formatDateText(document.student.startStudiesDate)
       : '*NO POSEE FECHA DE INICIO DE ESTUDIOS'
 
@@ -546,10 +564,22 @@ export class VariablesService {
       const otherUniversityResolution = document.changeUniversityResolution
       const otherUniversityDate = formatDateText(document.changeUniversityDate)
 
-      const addedText = `${otherUniversityDate} en la ${otherUniversity}, realizó el cambio de Universidad según Resolución ${otherUniversityResolution} ingresa el, `
+      const addedText = `${otherUniversityDate} en la ${otherUniversity}, realizó cambio de Universidad según Resolución ${otherUniversityResolution} e ingresa el `
 
-      startStudiesDateVariable.concat(addedText)
+      startStudiesDateVariable = addedText.concat(startStudiesDateVariable)
     }
+
+    const bachelorDegree = `${
+      document.student.bachelorDegree ?? '**NO POSEE TÍTULO DE BACHILLER'
+    } en ${
+      document.student.highSchoolName
+        ? `${
+            document.student.highSchoolName.toLowerCase().includes('instituto')
+              ? 'el'
+              : 'la'
+          } ${capitalizeEachWord(document.student.highSchoolName)}`
+        : '**NO POSEE NOMBRE DE INSTITUCIÓN DE EDUCACIÓN SECUNDARIA'
+    }`
 
     const variables = {
       ...genderVariations,
@@ -571,14 +601,13 @@ export class VariablesService {
       [DEFAULT_VARIABLE.ESTUDIANTE_TITULO_UPPER]: degree.toUpperCase(),
       [DEFAULT_VARIABLE.ESTUDIANTE_TEMA]:
         (document as DegreeCertificateEntity).topic ?? '*NO POSEE TEMA',
-      [DEFAULT_VARIABLE.ESTUDIANTE_TITULO_BACHILLER]:
-        document.student.bachelorDegree ?? '*NO POSEE TÍTULO BACHILLER',
-      [DEFAULT_VARIABLE.ESTUDIANTE_FECHA_INICIO_ESTUDIOS_FECHAUP]: document
-        .student.startStudiesDate
-        ? formatDateText(document.student.startStudiesDate)
-        : '*NO POSEE FECHA DE INICIO DE ESTUDIOS',
-      [DEFAULT_VARIABLE.ESTUDIANTE_FECHA_FIN_ESTUDIOS_FECHAUP]:
+      [DEFAULT_VARIABLE.ESTUDIANTE_TITULO_BACHILLER]: bachelorDegree,
+      [DEFAULT_VARIABLE.ESTUDIANTE_FECHA_INICIO_ESTUDIOS_FECHAUP]:
         startStudiesDateVariable,
+      [DEFAULT_VARIABLE.ESTUDIANTE_FECHA_FIN_ESTUDIOS_FECHAUP]: document.student
+        .endStudiesDate
+        ? formatDateText(document.student.endStudiesDate)
+        : '*NO POSEE FECHA DE FIN DE ESTUDIOS',
       [DEFAULT_VARIABLE.COORDINADOR]: getFullName(coordinator),
       [DEFAULT_VARIABLE.CANTON]: document.student.canton.name,
       [DEFAULT_VARIABLE.PROVINCE]: document.student.canton.province.name,
@@ -688,10 +717,8 @@ export class VariablesService {
     )
   }
 
-  formatMembersDateText(
-    membersAttendence: DegreeCertificateAttendanceEntity[],
-  ) {
-    const members = membersAttendence.filter(
+  formatMembersDateText(membersAttendend: DegreeCertificateAttendanceEntity[]) {
+    const members = membersAttendend.filter(
       (member) =>
         member.role === DEGREE_ATTENDANCE_ROLES.PRINCIPAL ||
         member.role === DEGREE_ATTENDANCE_ROLES.SUBSTITUTE,
@@ -701,7 +728,25 @@ export class VariablesService {
       (member) => member.details !== members[0].details,
     )
 
+    let membersText: string[] = []
+    const hasDiferentRoles = members.some(
+      (member) => member.role !== members[0].role,
+    )
+
     if (!isDetailsDifferent) {
+      if (hasDiferentRoles) {
+        membersText = members.map(
+          (member) =>
+            `${getFullNameWithTitles(member.functionary)} ${
+              MEMBERS_DESIGNATION[member.role][ADJECTIVES.SINGULAR]
+            } ${member.details} de fecha ${formatDateText(
+              member.assignationDate,
+            )}`,
+        )
+
+        return membersText.join(', ')
+      }
+
       return `${this.formatMembersNames(members)} ${
         members.length === 1
           ? MEMBERS_DESIGNATION[members[0].role][ADJECTIVES.SINGULAR]
@@ -722,7 +767,7 @@ export class VariablesService {
       clasifiedByDetails[member.details].push(member)
     })
 
-    const membersText = Object.entries(clasifiedByDetails).map(
+    membersText = Object.entries(clasifiedByDetails).map(
       ([details, members]) =>
         `${this.formatMembersNames(members)} ${
           members.length === 1
@@ -733,7 +778,7 @@ export class VariablesService {
         )}`,
     )
 
-    return membersText.join(' ')
+    return membersText.join(', ')
   }
 
   async getDegreeCertificateMemberVariables(
@@ -755,6 +800,12 @@ export class VariablesService {
       (member) => member.role === DEGREE_ATTENDANCE_ROLES.PRESIDENT,
     )
 
+    if (!president || !president.hasAttended) {
+      throw new DegreeCertificateAttendanceBadRequestError(
+        'No se puede generar el acta de grado sin la asistencia del presidente',
+      )
+    }
+
     if (president) {
       presidentData[DEGREE_CERTIFICATE_VARIABLES.DEGREE_CERTIFICATE_PRESIDENT] =
         getFullNameWithTitles(president.functionary)
@@ -772,21 +823,54 @@ export class VariablesService {
         member.role === DEGREE_ATTENDANCE_ROLES.SUBSTITUTE,
     )
 
+    const tribunalAttendedMembers = tribunalMembers.filter(
+      (member) => member.hasAttended,
+    )
+
+    if (tribunalAttendedMembers.length < 2) {
+      throw new DegreeCertificateAttendanceBadRequestError(
+        'No se puede generar el acta de grado sin la asistencia de al menos dos miembros',
+      )
+    }
+
     if (tribunalMembers.length) {
       membersData[DEGREE_CERTIFICATE_VARIABLES.MEMBERS_DEGREE_CERTIFICATE] =
         this.formatMembersDateText(membersAttended)
       membersData[
         DEGREE_CERTIFICATE_VARIABLES.FIRST_MEMBER_DEGREE_CERTIFICATE
-      ] = getFullNameWithTitles(tribunalMembers[0].functionary)
+      ] = getFullNameWithTitles(tribunalAttendedMembers[0].functionary)
       membersData[
         DEGREE_CERTIFICATE_VARIABLES.SECOND_MEMBER_DEGREE_CERTIFICATE
-      ] = getFullNameWithTitles(
-        tribunalMembers[tribunalMembers.length - 1].functionary,
+      ] = getFullNameWithTitles(tribunalAttendedMembers[1].functionary)
+      membersData[DEGREE_CERTIFICATE_VARIABLES.FIRST_MEMBER_WITHOUTH_DEGREES] =
+        getFullName(tribunalAttendedMembers[0].functionary)
+      membersData[DEGREE_CERTIFICATE_VARIABLES.SECOND_MEMBER_WITHOUTH_DEGREES] =
+        getFullName(tribunalAttendedMembers[1].functionary)
+      membersData[DEGREE_CERTIFICATE_VARIABLES.FIRST_MEMBER_THIRDL_DEGREE_ABR] =
+        getThirdLevelDegree(tribunalAttendedMembers[0].functionary)
+      membersData[
+        DEGREE_CERTIFICATE_VARIABLES.SECOND_MEMBER_THIRDL_DEGREE_ABR
+      ] = getThirdLevelDegree(tribunalAttendedMembers[1].functionary)
+      membersData[DEGREE_CERTIFICATE_VARIABLES.FIRST_MEMBER_FOURTHL_DEGREE] =
+        getFourthLevelDegree(tribunalAttendedMembers[0].functionary)
+      membersData[DEGREE_CERTIFICATE_VARIABLES.SECOND_MEMBER_FOURTHL_DEGREE] =
+        getFourthLevelDegree(tribunalAttendedMembers[1].functionary)
+      membersData[
+        DEGREE_CERTIFICATE_VARIABLES.FIRST_MEMBER_FOURTHL_DEGREE_START
+      ] = getFullNameWithFourthLevelDegreeFirst(
+        tribunalAttendedMembers[0].functionary,
       )
-      membersData[DEFAULT_VARIABLE.ASISTIERON] =
-        this.formatMembersNames(membersAttended)
-      membersData[DEFAULT_VARIABLE.NO_ASISTIERON] =
-        this.formatMembersNames(membersHasntAttended)
+      membersData[
+        DEGREE_CERTIFICATE_VARIABLES.SECOND_MEMBER_FOURTHL_DEGREE_START
+      ] = getFullNameWithFourthLevelDegreeFirst(
+        tribunalAttendedMembers[1].functionary,
+      )
+      membersData[DEFAULT_VARIABLE.ASISTIERON] = `${this.formatMembersNames(
+        membersAttended,
+      )}`
+      membersData[DEFAULT_VARIABLE.NO_ASISTIERON] = `${this.formatMembersNames(
+        membersHasntAttended,
+      )}`
     }
 
     const qb = this.dataSource

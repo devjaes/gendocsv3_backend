@@ -3,8 +3,10 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { UserAccessModuleEntity } from './entities/user-access-module.entity'
 import { DataSource, Repository } from 'typeorm'
 import { CreateUserAccessModuleDto } from './dto/create-user-access-module.dto'
-import { ModuleEntity } from '../modules/entities/modules.entity'
+import { ModuleEntity } from '../modules/entities/module.entity'
 import { ApiResponseDto } from '../shared/dtos/api-response.dto'
+import { UserAccessCareerDegCertEntity } from './entities/user-access-careers-deg-cert.entity'
+import { CareerEntity } from '../careers/entites/careers.entity'
 
 @Injectable()
 export class UserAccessModulesService {
@@ -69,7 +71,6 @@ export class UserAccessModulesService {
   }
 
   async update(createUserAccessModuleDto: CreateUserAccessModuleDto) {
-    console.log(createUserAccessModuleDto)
     const { userId, modulesIds } = createUserAccessModuleDto
     const modules: ModuleEntity[] = []
 
@@ -90,8 +91,6 @@ export class UserAccessModulesService {
         userId,
       })
 
-      console.log(user.accessModules)
-
       for (const moduleId of modulesIds) {
         const userAccessModuleCreated = this.userAccessModulesRepository.create(
           {
@@ -110,8 +109,6 @@ export class UserAccessModulesService {
         const userAccessModule = await this.userAccessModulesRepository.save(
           userAccessModuleCreated,
         )
-
-        console.log(userAccessModule)
 
         const module = await this.dataSource
           .createQueryBuilder()
@@ -135,6 +132,130 @@ export class UserAccessModulesService {
       return new ApiResponseDto('Acceso a usuarios actualizado correctamente', {
         userAccessModules,
         modules,
+      })
+    } catch (e) {
+      throw new HttpException(e.message, HttpStatus.INTERNAL_SERVER_ERROR)
+    }
+  }
+
+  async createCareerAccessDegCert({
+    userId,
+    careerIds,
+  }: {
+    userId: number
+    careerIds: number[]
+  }) {
+    try {
+      const userAccessCareerDegCertEntities: UserAccessCareerDegCertEntity[] =
+        []
+      const careers: CareerEntity[] = []
+
+      for (const careerId of careerIds) {
+        const career = await this.dataSource
+          .createQueryBuilder()
+          .select('career')
+          .from(CareerEntity, 'career')
+          .where('career.id = :careerId', { careerId })
+          .getOne()
+
+        if (!career) {
+          throw new HttpException('Carrera no encontrada', HttpStatus.NOT_FOUND)
+        }
+
+        const userAccessCareerCreated = UserAccessCareerDegCertEntity.create({
+          userId,
+          careerId,
+        })
+
+        if (!userAccessCareerCreated) {
+          throw new HttpException(
+            'Las carreras no se pudieron asignar',
+            HttpStatus.CONFLICT,
+          )
+        }
+
+        const userAccessCarrer = await UserAccessCareerDegCertEntity.save(
+          userAccessCareerCreated,
+        )
+
+        careers.push(career)
+        userAccessCareerDegCertEntities.push(userAccessCarrer)
+      }
+
+      return new ApiResponseDto('Acceso a usuarios creado correctamente', {
+        userAccessCareers: userAccessCareerDegCertEntities,
+        careers,
+      })
+    } catch (e) {
+      throw new HttpException(e.message, HttpStatus.INTERNAL_SERVER_ERROR)
+    }
+  }
+
+  async updateCareerAccessDegCert({
+    userId,
+    careerIds,
+  }: {
+    userId: number
+    careerIds: number[]
+  }) {
+    try {
+      const user = await this.dataSource
+        .createQueryBuilder()
+        .select('user')
+        .from('users', 'user')
+        .where('user.id = :userId', { userId })
+        .getOne()
+
+      if (!user) {
+        throw new HttpException('Usuario no encontrado', HttpStatus.NOT_FOUND)
+      }
+
+      await this.dataSource
+        .createQueryBuilder()
+        .delete()
+        .from(UserAccessCareerDegCertEntity)
+        .where('userId = :userId', { userId })
+        .execute()
+
+      const userAccessCareerDegCertEntities: UserAccessCareerDegCertEntity[] =
+        []
+      const careers: CareerEntity[] = []
+
+      for (const careerId of careerIds) {
+        const career = await this.dataSource
+          .createQueryBuilder()
+          .select('career')
+          .from(CareerEntity, 'career')
+          .where('career.id = :careerId', { careerId })
+          .getOne()
+
+        if (!career) {
+          throw new HttpException('Carrera no encontrada', HttpStatus.NOT_FOUND)
+        }
+
+        const userAccessCareerCreated = UserAccessCareerDegCertEntity.create({
+          userId,
+          careerId,
+        })
+
+        if (!userAccessCareerCreated) {
+          throw new HttpException(
+            'Las carreras no se pudieron asignar',
+            HttpStatus.CONFLICT,
+          )
+        }
+
+        const userAccessCarrer = await UserAccessCareerDegCertEntity.save(
+          userAccessCareerCreated,
+        )
+
+        careers.push(career)
+        userAccessCareerDegCertEntities.push(userAccessCarrer)
+      }
+
+      return new ApiResponseDto('Acceso a usuarios actualizado correctamente', {
+        userAccessCareers: userAccessCareerDegCertEntities,
+        careers,
       })
     } catch (e) {
       throw new HttpException(e.message, HttpStatus.INTERNAL_SERVER_ERROR)

@@ -1,5 +1,5 @@
 import { FunctionaryEntity } from '../../functionaries/entities/functionary.entity'
-import { ModuleEntity } from '../../modules/entities/modules.entity'
+import { ModuleEntity } from '../../modules/entities/module.entity'
 import { StudentEntity } from '../../students/entities/student.entity'
 import { CouncilAttendanceEntity } from '../entities/council-attendance.entity'
 import { CouncilEntity } from '../entities/council.entity'

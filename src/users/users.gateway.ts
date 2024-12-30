@@ -6,6 +6,8 @@ import {
 } from '@nestjs/websockets'
 import { Server } from 'socket.io'
 import { Catch, HttpException, Logger, UseFilters } from '@nestjs/common'
+import { UserEntity } from './entities/users.entity'
+import { UpdateUserDTO } from './dto/update-user.dto'
 
 @Catch(WsException, HttpException)
 class WsAndHttpExceptionFilter {
@@ -34,5 +36,16 @@ export class UsersGateway {
     },
   ): void {
     this.server.emit('change-access-modules', data)
+  }
+
+  @UseFilters(WsAndHttpExceptionFilter)
+  handleChangeUser(
+    @MessageBody()
+    data: {
+      id: number
+      user: Partial<UserEntity | UpdateUserDTO>
+    },
+  ): void {
+    this.server.emit('change-user', data)
   }
 }

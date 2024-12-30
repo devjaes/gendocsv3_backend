@@ -1,11 +1,15 @@
 import { FunctionaryEntity } from '../../functionaries/entities/functionary.entity'
 import { StudentEntity } from '../../students/entities/student.entity'
+import { UserEntity } from '../../users/entities/users.entity'
+import { ARROGANT_PROFESSORS } from '../enums/degree-certificates'
 
 export const toFirstUpperCase = (text: string): string =>
-  text.charAt(0).toUpperCase() + text.slice(1)
+  text
+    .toLowerCase()
+    .replace(/(^\w|[\s"']\w|[^\w\s][^\w])/g, (match) => match.toUpperCase())
 
 export const getFullName = (
-  entity: FunctionaryEntity | StudentEntity,
+  entity: FunctionaryEntity | StudentEntity | UserEntity,
 ): string => {
   const clonedObject = { ...entity }
   // const { firstName, secondName, firstLastName, secondLastName } = entity
@@ -15,28 +19,55 @@ export const getFullName = (
   const secondLastName = clonedObject.secondLastName
 
   return `${toFirstUpperCase(firstName)} ${
-    secondName ? toFirstUpperCase(secondName) : ''
-  } ${toFirstUpperCase(firstLastName)} ${
-    secondLastName ? toFirstUpperCase(secondLastName) : ''
+    secondName ? `${toFirstUpperCase(secondName)} ` : ''
+  }${toFirstUpperCase(firstLastName)}${
+    secondLastName ? ` ${toFirstUpperCase(secondLastName)}` : ''
   }`
 }
+
+export const toSnakeCase = (text: string): string =>
+  text.replace(/([A-Z])/g, (match) => `_${match.toLowerCase()}`)
 
 export const getFullNameWithTitles = (
   functionary: FunctionaryEntity,
 ): string => {
   const object = { ...functionary }
   const { thirdLevelDegree, fourthLevelDegree } = object
-  return `${
+  const name = `${
     thirdLevelDegree ? `${thirdLevelDegree.abbreviation}` : ''
   } ${getFullName(functionary)} ${
     fourthLevelDegree ? `${fourthLevelDegree.abbreviation}` : ''
   }`
+
+  Object.keys(ARROGANT_PROFESSORS).forEach((professor) => {
+    if (name.includes(professor)) {
+      return ARROGANT_PROFESSORS[professor]
+    }
+  })
+
+  return name
+}
+
+export const getThirdLevelDegree = (functionary: FunctionaryEntity): string =>
+  functionary.thirdLevelDegree?.abbreviation ?? ''
+
+export const getFourthLevelDegree = (functionary: FunctionaryEntity): string =>
+  functionary.fourthLevelDegree?.abbreviation ?? ''
+
+export const getFullNameWithFourthLevelDegreeFirst = (
+  functionary: FunctionaryEntity,
+): string => {
+  const object = { ...functionary }
+  const { fourthLevelDegree } = object
+  return `${
+    fourthLevelDegree ? `${fourthLevelDegree.abbreviation} ` : ''
+  }${getFullName(functionary)}`
 }
 
 export const capitalizeEachWord = (text: string): string =>
   text
     .split(' ')
-    .map((word) => toFirstUpperCase(word))
+    .map((word) => toFirstUpperCase(word.toLowerCase()))
     .join(' ')
 
 // eslint-disable-next-line no-magic-numbers

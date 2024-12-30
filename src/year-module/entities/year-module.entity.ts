@@ -1,7 +1,7 @@
 import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm'
 import { BaseAppEntity } from '../../shared/entities/base-app.entity'
 import { ApiProperty } from '@nestjs/swagger'
-import { ModuleEntity } from '../../modules/entities/modules.entity'
+import { ModuleEntity } from '../../modules/entities/module.entity'
 import { SubmoduleYearModuleEntity } from './submodule-year-module.entity'
 
 @Entity('year_module')

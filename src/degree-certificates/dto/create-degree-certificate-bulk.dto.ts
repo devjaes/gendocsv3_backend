@@ -1,4 +1,5 @@
 import {
+  IsDate,
   IsInt,
   IsNumberString,
   IsOptional,
@@ -71,6 +72,6 @@ export class CreateDegreeCertificateBulkDto {
   changeUniversityName?: string
 
   @IsOptional()
-  @IsString()
-  changeUniversityDate?: string
+  @IsDate()
+  changeUniversityDate?: Date
 }

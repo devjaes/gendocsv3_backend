@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common'
 import { CreateDocumentDto } from '../dto/create-document.dto'
 import { InjectRepository } from '@nestjs/typeorm'
-import { DataSource, Repository } from 'typeorm'
+import { Brackets, DataSource, Repository } from 'typeorm'
 import { DocumentEntity } from '../entities/document.entity'
 import { NumerationDocumentService } from '../../numeration-document/numeration-document.service'
 import { VariablesService } from '../../variables/variables.service'
@@ -17,7 +17,6 @@ import { StudentEntity } from '../../students/entities/student.entity'
 import { FilesService } from '../../files/services/files.service'
 import { formatNumeration } from '../../shared/utils/string'
 import { ResponseDocumentDto } from '../dto/response-document'
-import { PaginationV2Dto } from '../../shared/dtos/paginationv2.dto'
 import { ApiResponseDto } from '../../shared/dtos/api-response.dto'
 import { CouncilEntity } from '../../councils/entities/council.entity'
 import { NotificationsService } from '../../notifications/notifications.service'
@@ -28,6 +27,9 @@ import { DOCUMENT_QUEUE_NAME, DocumentRecreation } from '../constants'
 import { Queue } from 'bull'
 import { NotificationEntity } from '../../notifications/entities/notification.entity'
 import { NotificationsGateway } from '../../notifications/notifications.gateway'
+import { DocumentFiltersDto } from '../dto/document-filters.dto'
+import { EmailService } from '../../email/services/email.service'
+import { getWhatsAppLink } from '../../shared/utils/link'
 
 @Injectable()
 export class DocumentsService {
@@ -48,6 +50,7 @@ export class DocumentsService {
     private readonly numerationDocumentService: NumerationDocumentService,
     private readonly variableService: VariablesService,
     private readonly filesService: FilesService,
+    private readonly emailService: EmailService,
   ) {}
 
   async create(createDocumentDto: CreateDocumentDto) {
@@ -81,23 +84,27 @@ export class DocumentsService {
       }
       await this.documentsRepository.save(document)
 
-      const savedDocument = await this.documentsRepository.findOneOrFail({
-        where: { id: document.id },
-        relations: {
-          numerationDocument: {
-            council: {
-              attendance: {
-                functionary: true,
-              },
-            },
-          },
-          documentFunctionaries: {
-            functionary: true,
-          },
-          templateProcess: true,
-          user: true,
-        },
-      })
+      const qb = this.documentsRepository.createQueryBuilder('document')
+      qb.leftJoinAndSelect('document.numerationDocument', 'numerationDocument')
+      qb.leftJoinAndSelect('numerationDocument.council', 'council')
+      qb.leftJoinAndSelect('council.attendance', 'attendance')
+      qb.leftJoinAndSelect('attendance.functionary', 'functionary')
+      qb.leftJoinAndSelect('document.user', 'user')
+      qb.leftJoinAndSelect('document.student', 'student')
+      qb.leftJoinAndSelect('document.templateProcess', 'templateProcess')
+      qb.leftJoinAndSelect(
+        'document.documentFunctionaries',
+        'documentFunctionaries',
+      )
+      qb.leftJoinAndSelect('documentFunctionaries.functionary', 'functionarys')
+      qb.where('document.id = :id', { id: document.id })
+
+      const savedDocument = await qb.getOne()
+
+      if (!savedDocument) {
+        await this.numerationDocumentService.remove(numeration.id)
+        throw new Error('Error al crear el documento')
+      }
 
       const generalData = await this.variableService.getGeneralVariables(
         savedDocument,
@@ -170,9 +177,7 @@ export class DocumentsService {
           student: { id: student.id },
         })
 
-        studentData = await this.variableService.getStudentVariables(
-          savedDocument,
-        )
+        studentData = this.variableService.getStudentVariables(savedDocument)
       }
 
       const variables = {
@@ -301,7 +306,7 @@ export class DocumentsService {
         return
       }
 
-      await this.notificationsGateway.handleSendNotification({
+      this.notificationsGateway.handleSendNotification({
         notification: rootNotification,
         childs: [childNotification],
       })
@@ -360,7 +365,7 @@ export class DocumentsService {
       savedRootNotification = await rootNotification.save()
     }
 
-    await this.notificationsGateway.handleSendNotification({
+    this.notificationsGateway.handleSendNotification({
       notification: savedRootNotification,
       childs: notifications,
     })
@@ -438,25 +443,20 @@ export class DocumentsService {
     }
   }
 
-  async findAll(paginationDto: PaginationV2Dto) {
-    const {
-      // eslint-disable-next-line no-magic-numbers
-      rowsPerPage = 10,
-      order = 'ASC',
-      orderBy = 'id',
-      page = 1,
-      moduleId,
-    } = paginationDto
+  async findAll(filters: DocumentFiltersDto) {
+    const { moduleId, limit, page, order } = filters
+
+    const skip = (page - 1) * limit
 
     try {
-      // Se usa query builder para hacer la consulta por la velocidad de respuesta
-      const documents = await this.documentsRepository
+      const qb = this.documentsRepository
         .createQueryBuilder('document')
         .select([
           'document.id',
           'document.createdAt',
           'document.driveId',
           'document.description',
+          'document.studentNotified',
         ])
         .leftJoinAndSelect('document.numerationDocument', 'numerationDocument')
         .leftJoinAndSelect('numerationDocument.council', 'council')
@@ -476,20 +476,67 @@ export class DocumentsService {
         )
         .leftJoinAndSelect('documentFunctionaries.functionary', 'functionarys')
         .where('module.id = :moduleId', { moduleId: Number(moduleId) })
-        .orderBy(`document.${orderBy}`, order.toUpperCase() as 'ASC' | 'DESC')
-        .skip(rowsPerPage * (page - 1))
-        .take(rowsPerPage)
-        .getMany()
+
+      if (filters.field) {
+        const searchPattern = `%${filters.field}%`
+        qb.andWhere(
+          new Brackets((qb) => {
+            qb.where(
+              "CONCAT_WS(' ', student.firstName, student.secondName, student.firstLastName, student.secondLastName) ILIKE :field",
+              { field: searchPattern },
+            )
+              .orWhere('student.dni ILIKE :field', { field: searchPattern })
+              .orWhere(
+                "CONCAT_WS(' ', functionarys.firstName, functionarys.secondName, functionarys.firstLastName, functionarys.secondLastName) ILIKE :field",
+                { field: searchPattern },
+              )
+              .orWhere('templateProcess.name ILIKE :field', {
+                field: searchPattern,
+              })
+              .orWhere('council.name ILIKE :field', { field: searchPattern })
+              .orWhere(
+                'CAST(numerationDocument.number AS VARCHAR) ILIKE :field',
+                { field: searchPattern },
+              )
+          }),
+        )
+      }
+
+      if (filters.startDate != null && filters.endDate != null) {
+        if (filters.startDate && !filters.endDate) {
+          qb.andWhere('document.createdAt >= :startDate', {
+            startDate: filters.startDate,
+          })
+        } else if (!filters.startDate && filters.endDate) {
+          const endDate = new Date(filters.endDate)
+          endDate.setHours(23, 59, 59, 999)
+          qb.andWhere('document.createdAt <= :endDate', {
+            endDate,
+          })
+        } else {
+          const endDate = new Date(filters.endDate)
+          endDate.setHours(23, 59, 59, 999)
+          qb.andWhere('document.createdAt BETWEEN :startDate AND :endDate', {
+            startDate: filters.startDate,
+            endDate,
+          })
+        }
+      }
+      qb.orderBy(
+        filters.orderBy ? `document.${filters.orderBy}` : 'document.createdAt',
+        order,
+      )
+
+      const count = await qb.getCount()
+
+      qb.skip(skip)
+      qb.take(limit)
+
+      const documents = await qb.getMany()
 
       if (!documents) {
         throw new NotFoundException('Documents not found')
       }
-
-      const count = await this.documentsRepository.count({
-        where: {
-          numerationDocument: { council: { module: { id: Number(moduleId) } } },
-        },
-      })
 
       return new ApiResponseDto('Lista de documentos', {
         count,
@@ -498,31 +545,46 @@ export class DocumentsService {
         ),
       })
     } catch (error) {
+      console.error(error)
       throw new InternalServerErrorException(error.message)
     }
   }
 
+  async getOne(id: number) {
+    const document = await this.documentsRepository
+      .createQueryBuilder('document')
+      .select([
+        'document.id',
+        'document.createdAt',
+        'document.driveId',
+        'document.description',
+        'document.variables',
+        'document.studentNotified',
+      ])
+      .leftJoinAndSelect('document.numerationDocument', 'numerationDocument')
+      .leftJoinAndSelect('numerationDocument.council', 'council')
+      .leftJoinAndSelect('council.module', 'module')
+      .leftJoinAndSelect('document.user', 'user')
+      .leftJoinAndSelect('document.student', 'student')
+      .leftJoinAndSelect('document.templateProcess', 'templateProcess')
+      .leftJoinAndSelect(
+        'document.documentFunctionaries',
+        'documentFunctionaries',
+      )
+      .leftJoinAndSelect('documentFunctionaries.functionary', 'functionary')
+      .where('document.id = :id', { id })
+      .getOne()
+
+    if (!document) {
+      throw new NotFoundException('Document not found')
+    }
+
+    return document
+  }
+
   async findOne(id: number) {
     try {
-      const document = await this.documentsRepository
-        .createQueryBuilder('document')
-        .leftJoinAndSelect('document.numerationDocument', 'numerationDocument')
-        .leftJoinAndSelect('numerationDocument.council', 'council')
-        .leftJoinAndSelect('document.user', 'user')
-        .leftJoinAndSelect('document.student', 'student')
-        .leftJoinAndSelect('document.templateProcess', 'templateProcess')
-        .leftJoinAndSelect(
-          'document.documentFunctionaries',
-          'documentFunctionaries',
-        )
-        .leftJoinAndSelect('documentFunctionaries.functionary', 'functionary')
-        .where('document.id = :id', { id })
-        .getOne()
-
-      if (!document) {
-        throw new NotFoundException('Document not found')
-      }
-
+      const document = await this.getOne(id)
       const newDocument = new ResponseDocumentDto(document)
 
       return new ApiResponseDto('Documento encontrado', newDocument)
@@ -573,7 +635,7 @@ export class DocumentsService {
       })
 
       if (!document) {
-        throw new NotFoundException('Document not found')
+        throw new NotFoundException('Documento no encontrado')
       }
 
       const confirmation = await this.numerationDocumentService.documentRemoved(
@@ -581,7 +643,7 @@ export class DocumentsService {
       )
 
       if (!confirmation) {
-        throw new ConflictException('Numeration not updated')
+        throw new ConflictException('Numeración no actualizada')
       }
 
       await this.filesService.remove(document.driveId)
@@ -594,6 +656,68 @@ export class DocumentsService {
           : 'Error al eliminar el documento',
         {
           success: isDeleted.affected > 0,
+        },
+      )
+    } catch (error) {
+      throw new InternalServerErrorException(error.message)
+    }
+  }
+
+  async notifyStudent(id: number, whatsApp?: boolean) {
+    try {
+      const document = await this.getOne(id)
+
+      if (!document) {
+        throw new NotFoundException('Documento no encontrado')
+      }
+
+      if (!document.student) {
+        throw new ConflictException('Documento no tiene estudiante asignado')
+      }
+
+      const message = `Estimado/a ${document.student.firstName} ${
+        document.student.firstLastName
+      }, le notificamos que su trámite ${
+        document.templateProcess.name
+      } se ha resuelto por medio de ${
+        document.numerationDocument.council.name
+      } - ${
+        document.numerationDocument.council.module.name
+      }. \nPara constancia del mismo se ha generado el documento de resolución número ${formatNumeration(
+        document.numerationDocument.number,
+      )}.`
+
+      if (whatsApp) {
+        if (!document.student.phoneNumber) {
+          throw new ConflictException('Estudiante sin número de teléfono')
+        }
+
+        const wLink = getWhatsAppLink({
+          studentPhoneNumber: document.student.phoneNumber,
+          message,
+        })
+
+        return new ApiResponseDto('Redirigiendo a la ventana de WhatsApp', {
+          link: wLink,
+        })
+      }
+
+      this.emailService.sendEmail({
+        to: document.student.outlookEmail,
+        subject: 'Notificación de documento',
+        body: message,
+      })
+
+      const isNotified = await this.documentsRepository.update(document.id, {
+        studentNotified: true,
+      })
+
+      return new ApiResponseDto(
+        isNotified.affected > 0
+          ? 'Estudiante notificado'
+          : 'Error al notificar al estudiante',
+        {
+          success: isNotified.affected > 0,
         },
       )
     } catch (error) {

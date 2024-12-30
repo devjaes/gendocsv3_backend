@@ -79,7 +79,7 @@ export class DocumentEntity extends BaseAppEntity {
     description: 'Indica si el estudiante ya ha sido notificado',
   })
   @Column({
-    name: 'studentNotified',
+    name: 'student_notified',
     default: false,
     nullable: true,
   })

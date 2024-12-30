@@ -9,4 +9,5 @@ export interface IPayload {
   role: string
   isActive: boolean
   accessModules: number[]
+  accessCareersDegCert: number[]
 }

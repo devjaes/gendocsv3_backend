@@ -1,5 +1,6 @@
-import { DATE_TYPES } from '../councils/dto/council-filters.dto'
 import { NotificationEntity } from '../notifications/entities/notification.entity'
+import { PaginationDTO } from '../shared/dtos/pagination.dto'
+import { StudentEntity } from '../students/entities/student.entity'
 import { CreateDegreeCertificateBulkDto } from './dto/create-degree-certificate-bulk.dto'
 
 export enum DEGREE_CERTIFICATE {
@@ -19,12 +20,22 @@ export interface CertificateBulkCreation {
   retries?: NotificationEntity[]
 }
 
-export interface IDegreeCertificateFilters {
+export interface IDegreeCertificateFilters extends PaginationDTO {
   careerId?: number
   startDate?: Date
   endDate?: Date
-  dateType?: DATE_TYPES
-  limit?: number
-  offset?: number
+  isEnd?: boolean
   field?: string
+  order?: 'ASC' | 'DESC'
 }
+
+export const nonNullableStudentProperties: (keyof StudentEntity)[] = [
+  'gender',
+  'startStudiesDate',
+  'internshipHours',
+  'vinculationHours',
+  'highSchoolName',
+  'birthdate',
+  'canton',
+  'folio',
+]

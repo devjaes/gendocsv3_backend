@@ -32,7 +32,11 @@ const bootstrap = async () => {
   )
   app.useGlobalFilters(new HttpExceptionsMiddleware())
   app.enableShutdownHooks()
-  app.enableCors()
+  app.enableCors({
+    credentials: true,
+    origin: true,
+    exposedHeaders: ['Set-Cookie'],
+  })
 
   const options = buildOptions()
   const document = SwaggerModule.createDocument(app, options)

@@ -1,11 +1,11 @@
-import { IsNotEmpty, IsNumber } from 'class-validator'
+import { IsNumber, IsOptional } from 'class-validator'
 import { CreateFunctionaryDto } from './create-functionary.dto'
 import { PartialType } from '@nestjs/swagger'
 
 export class UpdateFunctionariesBulkItemDto extends PartialType(
   CreateFunctionaryDto,
 ) {
+  @IsOptional()
   @IsNumber()
-  @IsNotEmpty()
-  id: number
+  id?: number
 }

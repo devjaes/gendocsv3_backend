@@ -1,8 +1,8 @@
 import { IsOptional, IsBooleanString, IsString, IsInt } from 'class-validator'
-import { PaginationDto } from '../../shared/dtos/pagination.dto'
+import { PaginationDTO } from '../../shared/dtos/pagination.dto'
 import { Type } from 'class-transformer'
 
-export class StudentFiltersDto extends PaginationDto {
+export class StudentFiltersDto extends PaginationDTO {
   @IsOptional()
   @IsBooleanString()
   state?: boolean

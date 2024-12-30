@@ -25,6 +25,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       role: payload.role,
       isActive: payload.isActive,
       accessModules: payload.accessModules,
+      accessCareersDegCert: payload.accessCareersDegCert,
     }
   }
 }

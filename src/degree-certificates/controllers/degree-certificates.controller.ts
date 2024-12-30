@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  Logger,
   Param,
   ParseIntPipe,
   Patch,
@@ -13,7 +14,9 @@ import { CreateDegreeCertificateDto } from '../dto/create-degree-certificate.dto
 import { UpdateDegreeCertificateDto } from '../dto/update-degree-certificate.dto'
 import { ApiResponseDto } from '../../shared/dtos/api-response.dto'
 import { Auth } from '../../auth/decorators/auth.decorator'
+import * as util from 'util'
 import {
+  AdminRoles,
   RolesThatCanMutate,
   RolesThatCanQuery,
 } from '../../shared/constants/roles'
@@ -23,14 +26,22 @@ import { CreateDegreeCertificateBulkDto } from '../dto/create-degree-certificate
 import { ApiTags } from '@nestjs/swagger'
 import { CertificateNumerationService } from '../services/certificate-numeration.service'
 import { IDegreeCertificateFilters } from '../constants'
+import { UpdateCertificateService } from '../services/update-certificate.service'
+import { CertificateDocumentService } from '../services/certificate-document.service'
+import { CertificateValidator } from '../validators/certificate-validator'
 
 @ApiTags('degree-certificates')
 @Controller('degree-certificates')
 export class DegreeController {
+  private readonly logger = new Logger(DegreeController.name)
+
   constructor(
     private readonly degreeService: DegreeCertificatesService,
     private readonly certificateBulkService: CertificateBulkService,
     private readonly certificateNumerationService: CertificateNumerationService,
+    private readonly updateCertificateService: UpdateCertificateService,
+    private readonly certificateDocumentService: CertificateDocumentService,
+    private readonly validator: CertificateValidator,
   ) {}
 
   // #region DegreeCertificates
@@ -45,6 +56,16 @@ export class DegreeController {
   @Auth(...RolesThatCanMutate)
   @Post()
   async createDegreeCertificate(@Body() dto: CreateDegreeCertificateDto) {
+    this.logger.log(
+      `${DegreeController.name} Request: `,
+      util.inspect(
+        {
+          dto,
+        },
+        { depth: null, colors: true },
+      ),
+    )
+
     return await this.degreeService.create(dto)
   }
 
@@ -54,7 +75,19 @@ export class DegreeController {
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateDegreeCertificateDto,
   ) {
-    return await this.degreeService.update(id, dto)
+    this.logger.log(
+      `${DegreeController.name} Request: `,
+      util.inspect(
+        {
+          id,
+          dto,
+        },
+        { depth: null, colors: true },
+      ),
+    )
+    // extrac cookies token
+
+    return await this.updateCertificateService.update(id, dto)
   }
 
   @Auth(...RolesThatCanMutate)
@@ -88,10 +121,10 @@ export class DegreeController {
   @Auth(...RolesThatCanMutate)
   @Patch('generate-document/:id')
   async generateDocument(@Param('id', ParseIntPipe) id: number) {
-    return await this.degreeService.generateDocument(id)
+    return await this.certificateDocumentService.generateDocument(id)
   }
 
-  @Auth(...RolesThatCanMutate)
+  @Auth(...AdminRoles)
   @Patch('bulk/load/:userId')
   async loadBulk(
     @Body() createCertificatesDtos: CreateDegreeCertificateBulkDto[],
@@ -103,7 +136,6 @@ export class DegreeController {
       userId,
       retryId ? +retryId : undefined,
     )
-
     return new ApiResponseDto('Proceso de carga en ejecución', true)
   }
 
@@ -121,7 +153,7 @@ export class DegreeController {
       roomId?: number
     },
   ) {
-    await this.degreeService.checkPresentationDate({
+    await this.validator.checkPresentationDate({
       presentationDate,
       duration,
       roomId,
@@ -137,7 +169,7 @@ export class DegreeController {
     )
   }
 
-  @Auth(...RolesThatCanMutate)
+  @Auth(...AdminRoles)
   @Delete(':id')
   async deleteDegreeCertificate(@Param('id', ParseIntPipe) id: number) {
     return await this.degreeService.remove(id)

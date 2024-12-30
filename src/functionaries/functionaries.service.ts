@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common'
 import { CreateFunctionaryDto } from './dto/create-functionary.dto'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
+import { In, Repository } from 'typeorm'
 import { FunctionaryEntity } from './entities/functionary.entity'
-import { PaginationDto } from '../shared/dtos/pagination.dto'
+import { PaginationDTO } from '../shared/dtos/pagination.dto'
 import { UpdateFunctionaryDto } from './dto/update-functionary.dto'
 import { UpdateFunctionariesBulkItemDto } from './dto/update-functionaries-bulk.dto'
 import { FunctionaryAlreadyExists } from './errors/functionary-already-exists'
@@ -49,8 +49,9 @@ export class FunctionariesService {
     return new ApiResponseDto('Funcionario creado con éxito', newFuncionary)
   }
 
-  async findAll(paginationDto: PaginationDto) {
-    const { limit = 5, offset = 0 } = paginationDto
+  async findAll(paginationDto: PaginationDTO) {
+    const { limit, page } = paginationDto
+    const offset = limit * (page - 1)
 
     const functionaries = await this.functionaryRepository.find({
       order: {
@@ -83,8 +84,8 @@ export class FunctionariesService {
   }
 
   async findByFilters(filters: FunctionaryFiltersDto) {
-    // eslint-disable-next-line no-magic-numbers
-    const { limit = 10, offset = 0, field = '', state = 'true' } = filters
+    const { limit = 10, page = 1, field = '', state = 'true' } = filters
+    const offset = limit * (page - 1)
 
     const qb = this.functionaryRepository.createQueryBuilder('functionaries')
 
@@ -139,6 +140,17 @@ export class FunctionariesService {
   async createBulk(
     updateFunctionariesBulkDto: UpdateFunctionariesBulkItemDto[],
   ) {
+    if (!updateFunctionariesBulkDto.length) {
+      throw new FunctionaryBadRequestError('No se han enviado funcionarios')
+    }
+
+    if (
+      updateFunctionariesBulkDto.length === 0 ||
+      !updateFunctionariesBulkDto
+    ) {
+      throw new FunctionaryBadRequestError('No se han enviado funcionarios')
+    }
+
     const queryRunner =
       this.functionaryRepository.manager.connection.createQueryRunner()
 
@@ -146,21 +158,78 @@ export class FunctionariesService {
 
     try {
       await queryRunner.startTransaction()
+      const hasId = updateFunctionariesBulkDto.every((f) => f.id != null)
 
-      await queryRunner.manager.upsert(
-        FunctionaryEntity,
-        updateFunctionariesBulkDto as unknown as Partial<FunctionaryEntity>[],
-        {
+      if (
+        !hasId &&
+        [...new Set(updateFunctionariesBulkDto.map((f) => f.dni))].length !==
+          updateFunctionariesBulkDto.length
+      ) {
+        throw new FunctionaryBadRequestError(
+          'Existen cédulas duplicadas en la petición',
+        )
+      }
+
+      if (
+        hasId &&
+        updateFunctionariesBulkDto.length !==
+          [...new Set(updateFunctionariesBulkDto.map((f) => f.id))].length
+      ) {
+        throw new FunctionaryBadRequestError(
+          'Existen IDs duplicados en la petición',
+        )
+      }
+
+      if (
+        hasId &&
+        // eslint-disable-next-line no-extra-parens
+        (await this.functionaryRepository.count({
+          where: {
+            id: In([...new Set(updateFunctionariesBulkDto.map((f) => f.id))]),
+          },
+        })) !== updateFunctionariesBulkDto.length
+      ) {
+        throw new FunctionaryBadRequestError(
+          'Existen IDs que no corresponden a funcionarios existentes',
+        )
+      }
+
+      const functionariesDto = updateFunctionariesBulkDto.map((f) => ({
+        ...f,
+        thirdLevelDegree: f.thirdLevelDegree
+          ? {
+              id: f.thirdLevelDegree,
+            }
+          : undefined,
+        fourthLevelDegree: f.fourthLevelDegree
+          ? {
+              id: f.fourthLevelDegree,
+            }
+          : undefined,
+      }))
+
+      if (hasId) {
+        for (const functionary of functionariesDto) {
+          await queryRunner.manager.update(
+            FunctionaryEntity,
+            functionary.id,
+            functionary,
+          )
+        }
+      } else {
+        await queryRunner.manager.upsert(FunctionaryEntity, functionariesDto, {
           conflictPaths: ['dni'],
-          skipUpdateIfNoValuesChanged: true,
-        },
-      )
+        })
+      }
 
       await queryRunner.commitTransaction()
 
-      return new ApiResponseDto('Funcionarios actualizados con éxito', {
-        success: true,
-      })
+      const functionaries = await this.functionaryRepository.find()
+
+      return new ApiResponseDto(
+        'Funcionarios actualizados con éxito',
+        functionaries,
+      )
     } catch (error) {
       await queryRunner.rollbackTransaction()
 

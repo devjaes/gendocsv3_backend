@@ -35,19 +35,18 @@ prepare_production: $(ENV_FILE_PRODUCTION) $(COMPOSE_PRODUCTION_FILE) Makefile
 	@echo "Prepared successfully!"
 
 create_remote_directory:
-	@echo "Creating remote directory for gendocs related files..."
-	@ssh $(VM_USER)@$(VM_IP) "mkdir -p $(REMOTE_DIR)"
-	@echo "Creating remote directory for backups..."
-	@ssh $(VM_USER)@$(VM_IP) "mkdir -p $(REMOTE_BACKUPS_DIR)"
+	@echo "Validating and creating remote directories ($(REMOTE_DIR) and $(REMOTE_BACKUPS_DIR))..."
+	@ssh -i ~/.ssh/id_gendocsv3 $(VM_USER)@$(VM_IP) 'mkdir -p $(REMOTE_DIR) $(REMOTE_BACKUPS_DIR) \
+																									 echo "Directories created or already exist."'
 
 copy_files:
 	@echo "Copying files..."
-	@scp $(ENV_FILE_PRODUCTION) $(COMPOSE_PRODUCTION_FILE) $(VM_USER)@$(VM_IP):$(REMOTE_DIR)/
+	@scp -i ~/.ssh/id_gendocsv3 $(ENV_FILE_PRODUCTION) $(COMPOSE_PRODUCTION_FILE) $(VM_USER)@$(VM_IP):$(REMOTE_DIR)/
 
-deploy_backend_production: $(ENV_FILE_PRODUCTION) $(COMPOSE_PRODUCTION_FILE) Makefile
+deploy_backend_production:
 	@echo "Deploying backend to production..."
 	@make backup
-	@ssh $(VM_USER)@$(VM_IP) 'cd $(REMOTE_DIR) && \
+	@ssh -i ~/.ssh/id_gendocsv3 $(VM_USER)@$(VM_IP) 'cd $(REMOTE_DIR) && \
 														if [ $$(docker ps -q -f name=gendocsv3_backend) ] || [ $$(docker ps -q -f name=gendocsv3_bull_redis) ]; then \
 															docker compose -f $(COMPOSE_PRODUCTION_FILE) --env-file $(ENV_FILE_PRODUCTION) stop backend bull_redis; \
 															docker compose -f $(COMPOSE_PRODUCTION_FILE) --env-file $(ENV_FILE_PRODUCTION) rm -f backend bull_redis; \
@@ -57,7 +56,7 @@ deploy_backend_production: $(ENV_FILE_PRODUCTION) $(COMPOSE_PRODUCTION_FILE) Mak
 
 deploy_frontend_production: $(ENV_FILE_PRODUCTION) $(COMPOSE_PRODUCTION_FILE) Makefile
 	@echo "Deploying frontend to production..."
-	@ssh $(VM_USER)@$(VM_IP) "cd $(REMOTE_DIR) && \
+	@ssh -i ~/.ssh/id_gendocsv3 $(VM_USER)@$(VM_IP) "cd $(REMOTE_DIR) && \
 														if [ $$(docker ps -q -f name=gendocsv3_frontend) ]; then \
 															docker compose -f $(COMPOSE_PRODUCTION_FILE) --env-file $(ENV_FILE_PRODUCTION) stop frontend; \
 															docker compose -f $(COMPOSE_PRODUCTION_FILE) --env-file $(ENV_FILE_PRODUCTION) rm -f frontend; \
@@ -67,7 +66,7 @@ deploy_frontend_production: $(ENV_FILE_PRODUCTION) $(COMPOSE_PRODUCTION_FILE) Ma
 
 deploy_db_production: $(ENV_FILE_PRODUCTION) $(COMPOSE_PRODUCTION_FILE) Makefile
 	@echo "Deploying db to production..."
-	@ssh $(VM_USER)@$(VM_IP) "cd $(REMOTE_DIR) && \
+	@ssh -i ~/.ssh/id_gendocsv3 $(VM_USER)@$(VM_IP) "cd $(REMOTE_DIR) && \
 														if [ $$(docker ps -q -f name=gendocsv3_postgres) ]; then \
 															docker compose -f $(COMPOSE_PRODUCTION_FILE) --env-file $(ENV_FILE_PRODUCTION) down postgres; \
 														fi && \
@@ -86,8 +85,8 @@ backup:
 	@ssh $(VM_USER)@$(VM_IP) "$(REMOTE_BACKUP_SCRIPT)"
 
 generate_ssh_key:
-	ssh-keygen -t rsa -b 2048 -C "gendocsv3" -f ~/.ssh/id_gendocsv3 -N "" | true
-	scp ~/.ssh/id_gendocsv3.pub ${VM_USER}@$(VM_IP):~/.ssh/authorized_keys
+	ssh-keygen -t rsa -b 2048 -C "gendocsv3" -f ~/.ssh/id_gendocsv3 -N "" || true
+	scp -i ~/.ssh/id_gendocsv3 ~/.ssh/id_gendocsv3.pub ${VM_USER}@$(VM_IP):~/.ssh/authorized_keys
 
 install_backup_script_cron:
 	@make uninstall_crons

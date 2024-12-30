@@ -15,20 +15,28 @@ import { CreateStudentDto } from './dto/create-student.dto'
 import { UpdateStudentDto } from './dto/update-student.dto'
 import { ApiResponse, ApiTags } from '@nestjs/swagger'
 import { StudentEntity } from './entities/student.entity'
-import { PaginationDto } from '../shared/dtos/pagination.dto'
+import { PaginationDTO } from '../shared/dtos/pagination.dto'
 import { UpdateStudentsBulkItemDto } from './dto/update-students-bulk.dto'
 import { StudentFiltersDto } from './dto/student-filters.dto'
+import { Auth } from '../auth/decorators/auth.decorator'
+import {
+  RolesThatCanMutate,
+  RolesThatCanQuery,
+  RolesType,
+} from '../shared/constants/roles'
 
 @ApiTags('Students')
 @Controller('students')
 export class StudentsController {
   constructor(private readonly studentsService: StudentsService) {}
 
+  @Auth(RolesType.ADMIN)
   @Post()
   async create(@Body() createStudentDto: CreateStudentDto) {
     return await this.studentsService.create(createStudentDto)
   }
 
+  @Auth(RolesType.ADMIN)
   @Patch('bulk')
   async createBulk(
     @Body() createStudentsBulkDto: UpdateStudentsBulkItemDto[],
@@ -42,24 +50,28 @@ export class StudentsController {
     )
   }
 
+  @Auth(...RolesThatCanQuery)
   @ApiResponse({ isArray: true, type: StudentEntity })
   @Get()
-  async findAll(@Query() paginationDto: PaginationDto) {
+  async findAll(@Query() paginationDto: PaginationDTO) {
     return await this.studentsService.findAll(paginationDto)
   }
 
+  @Auth(...RolesThatCanQuery)
   @ApiResponse({ type: StudentEntity })
   @Get('filter')
   async findByFilters(@Query() filters: StudentFiltersDto) {
     return await this.studentsService.findByFilters(filters)
   }
 
+  @Auth(...RolesThatCanQuery)
   @ApiResponse({ type: StudentEntity })
   @Get(':id')
   async findOne(@Param('id', ParseIntPipe) id: number) {
     return await this.studentsService.findOne(id)
   }
 
+  @Auth(...RolesThatCanMutate)
   @Patch(':id')
   async update(
     @Param('id', ParseIntPipe) id: number,
@@ -68,6 +80,7 @@ export class StudentsController {
     return await this.studentsService.update(id, updateStudentDto)
   }
 
+  @Auth(RolesType.ADMIN)
   @Delete(':id')
   async remove(@Param('id', ParseIntPipe) id: number) {
     return await this.studentsService.remove(id)

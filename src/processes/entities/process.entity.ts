@@ -1,10 +1,10 @@
 import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm'
 import { BaseAppEntity } from '../../shared/entities/base-app.entity'
 import { UserEntity } from '../../users/entities/users.entity'
-import { ModuleEntity } from '../../modules/entities/modules.entity'
+import { ModuleEntity } from '../../modules/entities/module.entity'
 import { ApiProperty } from '@nestjs/swagger'
-import { SubmoduleYearModuleEntity } from '../../year-module/entities/submodule-year-module.entity'
 import { TemplateProcess } from '../../templates/entities/template-processes.entity'
+import { SubmoduleEntity } from '../../submodules/entities/submodule.entity'
 
 @Entity('processes')
 export class ProcessEntity extends BaseAppEntity {
@@ -57,15 +57,9 @@ export class ProcessEntity extends BaseAppEntity {
   @JoinColumn({ name: 'module_id' })
   module: ModuleEntity
 
-  @ApiProperty({
-    example: '2',
-    description:
-      'submodule_year_module al que pertenece proceso para obtener el directorio padre de drive',
-    type: () => SubmoduleYearModuleEntity,
-  })
-  @ManyToOne(() => SubmoduleYearModuleEntity, { nullable: false })
-  @JoinColumn({ name: 'submodule_year_module_id' })
-  submoduleYearModule: SubmoduleYearModuleEntity
+  @ManyToOne(() => SubmoduleEntity, { eager: false, nullable: false })
+  @JoinColumn({ name: 'submodule_id' })
+  submodule: SubmoduleEntity
 
   @ApiProperty({
     example: '1',

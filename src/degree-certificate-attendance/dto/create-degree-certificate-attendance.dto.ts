@@ -57,4 +57,13 @@ export class CreateDegreeCertificateAttendanceDto {
   @IsNotEmpty()
   @Type(() => Date)
   assignationDate: Date
+
+  @ApiProperty({
+    example: '2023-12-31',
+    description: 'Fecha de creación del registro',
+    type: Date,
+  })
+  @IsOptional()
+  @Type(() => Date)
+  createdAt?: Date
 }

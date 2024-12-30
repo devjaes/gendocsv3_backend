@@ -1,6 +1,6 @@
 import { Controller, Post, Body } from '@nestjs/common'
-import { YearModuleService } from './year-module.service'
 import { CreateYearModuleDto } from './dto/create-year-module.dto'
+import { YearModuleService } from './services/year-module.service'
 
 @Controller('year-module')
 export class YearModuleController {

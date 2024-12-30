@@ -1,6 +1,6 @@
 import { MigrationInterface, QueryRunner } from 'typeorm'
 import { UserEntity } from '../users/entities/users.entity'
-import { ModuleEntity } from '../modules/entities/modules.entity'
+import { ModuleEntity } from '../modules/entities/module.entity'
 import { SubmoduleEntity } from '../submodules/entities/submodule.entity'
 import { SubmoduleModuleEntity } from '../submodules-modules/entities/submodule-module.entity'
 import { UserAccessModuleEntity } from '../users-access-modules/entities/user-access-module.entity'

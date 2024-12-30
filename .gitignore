@@ -410,8 +410,8 @@ pnpm-lock.yaml
 #temp folders
 temp-assets/
 
-recopilations/
-storage/recopilations/
-storage/temp/
+*.xlsx
+*.xls
+*.docx
 
 *.http

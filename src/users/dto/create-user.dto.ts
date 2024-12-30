@@ -81,4 +81,10 @@ export class CreateUserDTO {
   })
   @IsOptional()
   accessModules?: number[]
+
+  @IsOptional()
+  @IsArray({
+    message: 'Las carreras a las que tiene acceso deben ser un array',
+  })
+  accessCareersDegCert?: number[]
 }

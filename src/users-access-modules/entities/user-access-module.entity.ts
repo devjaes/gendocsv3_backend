@@ -1,4 +1,4 @@
-import { ModuleEntity } from '../../modules/entities/modules.entity'
+import { ModuleEntity } from '../../modules/entities/module.entity'
 import { UserEntity } from '../../users/entities/users.entity'
 import {
   CreateDateColumn,
@@ -22,8 +22,8 @@ export class UserAccessModuleEntity {
   moduleId: number
 
   @ManyToOne(() => UserEntity, {
-    onDelete: 'CASCADE',
-    onUpdate: 'CASCADE',
+    onDelete: 'NO ACTION',
+    onUpdate: 'NO ACTION',
   })
   @JoinColumn({
     name: 'user_id',
@@ -32,8 +32,8 @@ export class UserAccessModuleEntity {
   user: UserEntity[]
 
   @ManyToOne(() => ModuleEntity, {
-    onDelete: 'CASCADE',
-    onUpdate: 'CASCADE',
+    onDelete: 'NO ACTION',
+    onUpdate: 'NO ACTION',
   })
   @JoinColumn({
     name: 'module_id',

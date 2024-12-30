@@ -8,7 +8,7 @@ import {
 } from 'class-validator'
 import { Type } from 'class-transformer'
 import { COUNCIL_TYPES } from '../interfaces/council.interface'
-import { PaginationDto } from '../../shared/dtos/pagination.dto'
+import { PaginationDTO } from '../../shared/dtos/pagination.dto'
 
 export enum DATE_TYPES {
   EJECUTION = 'EJECUTION',
@@ -16,7 +16,7 @@ export enum DATE_TYPES {
   PRESENTATION = 'PRESENTATION',
 }
 
-export class CouncilFiltersDto extends PaginationDto {
+export class CouncilFiltersDto extends PaginationDTO {
   @IsOptional()
   @IsBooleanString()
   state?: boolean

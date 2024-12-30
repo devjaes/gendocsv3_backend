@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common'
+import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common'
 import { GcpService } from '../../gcp/gcp.service'
 import { FileSystemService } from './file-system.service'
 import { DEFAULT_VARIABLE } from '../../shared/enums/default-variable'
@@ -15,6 +15,7 @@ import { ReturnMethodDto } from '../../shared/dtos/return-method.dto'
 
 @Injectable()
 export class FilesService {
+  private readonly logger = new Logger(FilesService.name)
   constructor(
     private readonly gcpService: GcpService,
     private readonly fileSystemService: FileSystemService,
@@ -112,6 +113,7 @@ export class FilesService {
       )
     }
 
+    this.logger.log(`Asset shared with email: ${email} and role: ${role}`)
     return new ReturnMethodDto(result)
   }
 

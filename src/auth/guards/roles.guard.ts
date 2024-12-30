@@ -8,6 +8,7 @@ import { Observable } from 'rxjs'
 import { Reflector } from '@nestjs/core'
 import { ROLE_METADATA } from '../constants'
 import { IPayload } from '../types/payload.interface'
+import { SpanishRolesType } from '../../shared/constants/roles'
 
 @Injectable()
 export class RolesGuard implements CanActivate {
@@ -29,7 +30,9 @@ export class RolesGuard implements CanActivate {
     if (isValid) return true
 
     throw new ForbiddenException(
-      `Error de autorización. Usuario necesita roles: [${validRoles}]`,
+      `Error de autorización. Usuario necesita roles: [${validRoles.map(
+        (role) => SpanishRolesType[role],
+      )}]`,
     )
   }
 }

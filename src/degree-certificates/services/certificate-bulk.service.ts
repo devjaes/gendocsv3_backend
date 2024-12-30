@@ -40,8 +40,10 @@ import { NotificationStatus } from '../../shared/enums/notification-status'
 import { NotificationEntity } from '../../notifications/entities/notification.entity'
 import { CertificateNumerationService } from './certificate-numeration.service'
 import { formatDateTime } from '../../shared/utils/date'
-import { ModuleEntity } from '../../modules/entities/modules.entity'
+import { ModuleEntity } from '../../modules/entities/module.entity'
 import { BaseError } from '../../shared/utils/error'
+import { getFullName } from '../../shared/utils/string'
+import { CertificateValidator } from '../validators/certificate-validator'
 
 @Injectable()
 export class CertificateBulkService {
@@ -61,6 +63,7 @@ export class CertificateBulkService {
     private readonly notificationsService: NotificationsService,
     private readonly certificateNumerationService: CertificateNumerationService,
     private readonly notificationsGateway: NotificationsGateway,
+    private readonly validator: CertificateValidator,
 
     @Inject('DegreeCertificateRepository')
     private readonly degreeCertificateRepository: DegreeCertificateRepository,
@@ -164,6 +167,12 @@ export class CertificateBulkService {
       savedRootNotification = await rootNotification.save()
     }
 
+    if (rootNotification.retryId && completedWithoutErrors.length > 0) {
+      await this.notificationsService.update(rootNotification.retryId, {
+        status: NotificationStatus.COMPLETED,
+      })
+    }
+
     this.notificationsGateway.handleSendNotification({
       notification: savedRootNotification,
       childs: notifications,
@@ -188,14 +197,21 @@ export class CertificateBulkService {
   > {
     this.logger.log('Creando un certificado de grado...')
 
-    const notificationBaseName = `Acta de grado -${createCertificateDto.studentDni}`
+    const studentToFillName = await StudentEntity.findOne({
+      where: { dni: createCertificateDto.studentDni },
+    })
 
-    let prev: NotificationEntity
+    const notificationBaseName = `Acta de grado -${
+      createCertificateDto.studentDni
+    }
+      ${studentToFillName != null ? getFullName(studentToFillName) : ''}`
+
     let childNotification: NotificationEntity
+    const prev: NotificationEntity = retries?.find((r) =>
+      r.name.includes(notificationBaseName),
+    )
 
     if (notification.retryId) {
-      prev = retries.find((r) => r.name.includes(notificationBaseName))
-
       if (prev) {
         childNotification = await this.notificationsService.create({
           createdBy: notification.createdBy.id,
@@ -223,16 +239,21 @@ export class CertificateBulkService {
 
         if (prevData.entities.degreeCertificate) {
           const degreeCertificate =
-            await this.degreeCertificateRepository.findOne(
-              prevData.entities.degreeCertificate.id,
-            )
+            await this.degreeCertificateRepository.findOne({
+              where: {
+                id: prevData.entities.degreeCertificate.id,
+              },
+            })
 
           if (degreeCertificate) {
             await this.degreeCertificateService.remove(degreeCertificate.id)
           }
         }
       }
-    } else {
+    } else if (
+      !notification.retryId ||
+      prev.status === NotificationStatus.FAILURE
+    ) {
       childNotification = await this.notificationsService.create({
         createdBy: notification.createdBy.id,
         name: notificationBaseName,
@@ -498,7 +519,7 @@ export class CertificateBulkService {
         )
       }
 
-      await this.degreeCertificateService.checkStudent(students.students[0])
+      await this.validator.checkStudent(students.students[0])
 
       return students
     } catch (error) {
@@ -627,6 +648,10 @@ export class CertificateBulkService {
       },
       duration: 60,
       user: { id: userId },
+      changeUniversityResolution:
+        createCertificateDto.changeUniversityResolution,
+      changeUniversityName: createCertificateDto.changeUniversityName,
+      changeUniversityDate: createCertificateDto.changeUniversityDate,
     }
   }
 
@@ -717,7 +742,7 @@ export class CertificateBulkService {
             assignationDate: new Date(),
             degreeCertificateId: degreeCertificate.id,
             functionaryId: firstSecondaryQualifier.functionaries[0].id,
-            details: createCertificateDto.qualifiersResolution,
+            details: 'POR DEFINIR',
             role: DEGREE_ATTENDANCE_ROLES.SUBSTITUTE,
           })
 
@@ -746,7 +771,7 @@ export class CertificateBulkService {
             assignationDate: new Date(),
             degreeCertificateId: degreeCertificate.id,
             functionaryId: secondSecondaryQualifier.functionaries[0].id,
-            details: createCertificateDto.qualifiersResolution,
+            details: 'POR DEFINIR',
             role: DEGREE_ATTENDANCE_ROLES.SUBSTITUTE,
           })
 

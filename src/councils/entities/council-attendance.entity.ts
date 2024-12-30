@@ -3,7 +3,7 @@ import { ICouncilAttendance } from '../interfaces/council-attendance.interface'
 import { FunctionaryEntity } from '../../functionaries/entities/functionary.entity'
 import { CouncilEntity } from './council.entity'
 import { BaseAppEntity } from '../../shared/entities/base-app.entity'
-import { ModuleEntity } from '../../modules/entities/modules.entity'
+import { ModuleEntity } from '../../modules/entities/module.entity'
 import { StudentEntity } from '../../students/entities/student.entity'
 
 @Entity('council_attendance')

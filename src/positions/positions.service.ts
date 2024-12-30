@@ -10,7 +10,7 @@ import { UpdatePositionDto } from './dto/update-position.dto'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { PositionEntity } from './entities/position.entity'
-import { PaginationDto } from '../shared/dtos/pagination.dto'
+import { PaginationDTO } from '../shared/dtos/pagination.dto'
 import { FunctionaryEntity } from '../functionaries/entities/functionary.entity'
 import { ApiResponseDto } from '../shared/dtos/api-response.dto'
 
@@ -54,9 +54,9 @@ export class PositionsService {
     }
   }
 
-  async findAll(paginationDto: PaginationDto) {
-    // eslint-disable-next-line no-magic-numbers
-    const { limit = 5, offset = 0 } = paginationDto
+  async findAll(paginationDto: PaginationDTO) {
+    const { limit, page } = paginationDto
+    const offset = limit * (page - 1)
 
     try {
       const positions = await this.positionRepository.find({
@@ -96,9 +96,10 @@ export class PositionsService {
     }
   }
 
-  async findByField(field: string, paginationDTO: PaginationDto) {
+  async findByField(field: string, paginationDTO: PaginationDTO) {
     // eslint-disable-next-line no-magic-numbers
-    const { limit = 5, offset = 0 } = paginationDTO
+    const { limit, page } = paginationDTO
+    const offset = limit * (page - 1)
 
     const queryBuilder = this.positionRepository.createQueryBuilder('positions')
 

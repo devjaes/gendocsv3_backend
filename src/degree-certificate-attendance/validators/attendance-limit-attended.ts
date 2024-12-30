@@ -56,7 +56,8 @@ export class AttendanceLimitAttendedValidator extends Validator<IAttendanceLimit
     if (
       // eslint-disable-next-line no-extra-parens
       (hasAttended && role === DEGREE_ATTENDANCE_ROLES.SUBSTITUTE) ||
-      role === DEGREE_ATTENDANCE_ROLES.PRINCIPAL
+      // eslint-disable-next-line no-extra-parens
+      (hasAttended && role === DEGREE_ATTENDANCE_ROLES.PRINCIPAL)
     ) {
       const attQuery = this.dataSource
         .createQueryBuilder(DegreeCertificateAttendanceEntity, 'attendance')
@@ -68,7 +69,9 @@ export class AttendanceLimitAttendedValidator extends Validator<IAttendanceLimit
             DEGREE_ATTENDANCE_ROLES.PRINCIPAL,
           ],
         })
-        .andWhere('attendance.hasAttended = :hasAttended', { hasAttended })
+        .andWhere('attendance.hasAttended = :hasAttended', {
+          hasAttended: true,
+        })
         .andWhere('attendance.id <> :attendanceId', { attendanceId })
 
       const attendedMembers = await attQuery.getCount()

@@ -411,7 +411,7 @@ export class LoadDriveMainFolders1704786020632 implements MigrationInterface {
       // 22
       {
         certificateType: {
-          id: 1,
+          id: 4,
         },
         career: {
           id: 8,
@@ -420,7 +420,7 @@ export class LoadDriveMainFolders1704786020632 implements MigrationInterface {
       // 23
       {
         certificateType: {
-          id: 2,
+          id: 5,
         },
         career: {
           id: 8,
@@ -429,7 +429,7 @@ export class LoadDriveMainFolders1704786020632 implements MigrationInterface {
       // 24
       {
         certificateType: {
-          id: 3,
+          id: 6,
         },
         career: {
           id: 8,
@@ -1000,10 +1000,11 @@ export class LoadDriveMainFolders1704786020632 implements MigrationInterface {
     ]
 
     const yearModuleData = [
+      // 1
       {
         year: 2024,
         driveId:
-          `${process.env.NODE_ENV}` === 'production'
+          process.env.NODE_ENV === 'production'
             ? '1kLqtSvzNap_iC787uXit7DxcH1uBLtk8'
             : '1cBw8ldhcEP8cfXmr9MhZZlDcAiq9KwNv',
         isActive: true,
@@ -1012,10 +1013,11 @@ export class LoadDriveMainFolders1704786020632 implements MigrationInterface {
           id: 9,
         },
       },
+      // 2
       {
         year: 2024,
         driveId:
-          `${process.env.NODE_ENV}` === 'production'
+          process.env.NODE_ENV === 'production'
             ? '1GILU4ZJ6j_NCzNuINY23BKWhKCZ7Oby0'
             : '1bDL7qiunP_KX9dX_nylRAhFmJP8w9wia',
         isActive: true,
@@ -1023,10 +1025,11 @@ export class LoadDriveMainFolders1704786020632 implements MigrationInterface {
           id: 8,
         },
       },
+      // 3
       {
         year: 2024,
         driveId:
-          `${process.env.NODE_ENV}` === 'production'
+          process.env.NODE_ENV === 'production'
             ? '1aIAlnqy3h9c3eo5EL-a2imaP1mjZS5Jp'
             : '1Dzay8xFAfoWFhpMV2PlSyB74iijpO55m',
         isActive: true,
@@ -1034,10 +1037,11 @@ export class LoadDriveMainFolders1704786020632 implements MigrationInterface {
           id: 7,
         },
       },
+      // 4
       {
         year: 2024,
         driveId:
-          `${process.env.NODE_ENV}` === 'production'
+          process.env.NODE_ENV === 'production'
             ? '1ILpzpiMyKa4DZPNtSQ2jCGPZnW-2TvcX'
             : '105qD4IBAzdUOs7Wc3STtt-b1KZA6umgj',
         isActive: true,
@@ -1045,10 +1049,11 @@ export class LoadDriveMainFolders1704786020632 implements MigrationInterface {
           id: 6,
         },
       },
+      // 5
       {
         year: 2024,
         driveId:
-          `${process.env.NODE_ENV}` === 'production'
+          process.env.NODE_ENV === 'production'
             ? '1f1bKMbE9oQc0jMpwPeHa0NpgOLNSoVcc'
             : '1tjONGkFa-3XisVTzy-YoUbldxMvdxQD9',
         isActive: true,
@@ -1056,10 +1061,11 @@ export class LoadDriveMainFolders1704786020632 implements MigrationInterface {
           id: 5,
         },
       },
+      // 6
       {
         year: 2024,
         driveId:
-          `${process.env.NODE_ENV}` === 'production'
+          process.env.NODE_ENV === 'production'
             ? '1l_k4e3wGFt8owAZiLgoS-XhgHy4JLp69'
             : '1yE4oJIRrN3MWv8RO-K7FZJ2vSvrUZkNW',
         isActive: true,
@@ -1067,10 +1073,11 @@ export class LoadDriveMainFolders1704786020632 implements MigrationInterface {
           id: 4,
         },
       },
+      // 7
       {
         year: 2024,
         driveId:
-          `${process.env.NODE_ENV}` === 'production'
+          process.env.NODE_ENV === 'production'
             ? '1K8i3UITeETMqKiL1ZpTt1vyFoadOB-fa'
             : '1yaCOa3zMV_6ygjSUEAenIkQ7EwIB49q9',
         isActive: true,
@@ -1078,10 +1085,11 @@ export class LoadDriveMainFolders1704786020632 implements MigrationInterface {
           id: 3,
         },
       },
+      // 8
       {
         year: 2024,
         driveId:
-          `${process.env.NODE_ENV}` === 'production'
+          process.env.NODE_ENV === 'production'
             ? '1Uk077vFDJfeZ3bWkNK1ITZ6gs-71MMp-'
             : '1Bd6duD1zeqmW_nySLDB-S-jap7HRH6I-',
         isActive: true,
@@ -1089,10 +1097,11 @@ export class LoadDriveMainFolders1704786020632 implements MigrationInterface {
           id: 2,
         },
       },
+      // 9
       {
         year: 2024,
         driveId:
-          `${process.env.NODE_ENV}` === 'production'
+          process.env.NODE_ENV === 'production'
             ? '1JExETZfoKlomyJG1kleGya8gp_UVcMDh'
             : '1KjoToTEpeeAVPXuYhGAkhcUEwsJgtz1O',
         isActive: true,
@@ -1100,10 +1109,11 @@ export class LoadDriveMainFolders1704786020632 implements MigrationInterface {
           id: 1,
         },
       },
+      // 10
       {
         year: 2024,
         driveId:
-          `${process.env.NODE_ENV}` === 'production'
+          process.env.NODE_ENV === 'production'
             ? '1Lw1t8zWeG1sZZ3swNIQJLU2_ddSG24gk'
             : '1qwsrsSy--lTjeaoyjTVhF911b5YbjXjQ',
         isActive: true,
@@ -1111,10 +1121,11 @@ export class LoadDriveMainFolders1704786020632 implements MigrationInterface {
           id: 11,
         },
       },
+      // 11
       {
         year: 2024,
         driveId:
-          `${process.env.NODE_ENV}` === 'production'
+          process.env.NODE_ENV === 'production'
             ? '1-e1V1X2x9Ag5moZYqSbeU2zAaQy_WYSe'
             : '14SN3D9ThTxMVM64unOwcf3IrNaVq5UOZ',
         isActive: true,
@@ -1126,150 +1137,83 @@ export class LoadDriveMainFolders1704786020632 implements MigrationInterface {
 
     const submoduleYearModuleData = [
       {
-        name: 'Procesos',
-        driveId:
-          `${process.env.NODE_ENV}` === 'production'
-            ? '1YrLWFQYDXZUnq_5ciTMcpONnT9yJfEWi'
-            : '1DJlzVzRCqelc1o4wUNRXp_5swm1ynIa6',
-        yearModule: {
-          id: 1,
-        },
-      },
-      {
         name: 'Consejos',
         driveId:
-          `${process.env.NODE_ENV}` === 'production'
+          process.env.NODE_ENV === 'production'
             ? '1fgW6OkSALuTlDbbx-Oo_T6sJyen0IlAy'
             : '1G32DPZYCFVLPwgYKNSDJRAdadw0u-Mhc',
         yearModule: {
           id: 1,
         },
       },
-      {
-        name: 'Procesos',
-        driveId:
-          `${process.env.NODE_ENV}` === 'production'
-            ? '1IPM_XQVoZRa9bRhVffkaAK4nfdc_IWIQ'
-            : '1M67kzEjDkmaIlbbaMf9g8petu_w8hLzq',
 
-        yearModule: { id: 2 },
-      },
       {
         name: 'Consejos',
         driveId:
-          `${process.env.NODE_ENV}` === 'production'
+          process.env.NODE_ENV === 'production'
             ? '1iF0PWlfs9ShHZNOW15qsN6hoYQHrjH8v'
             : '19ih-hfLXTOii11ajI1ERnE7J79TMfWq8',
         yearModule: { id: 2 },
       },
-      {
-        name: 'Procesos',
-        driveId:
-          `${process.env.NODE_ENV}` === 'production'
-            ? '1ZQhd1W6OdvpAbUx9Ph6AjOnPFRjCccNF'
-            : '1ADDu_53Z6uhQtWUiLuPAHdQA4GHQ5cKX',
-        yearModule: { id: 3 },
-      },
+
       {
         name: 'Consejos',
         driveId:
-          `${process.env.NODE_ENV}` === 'production'
+          process.env.NODE_ENV === 'production'
             ? '1YO2MQ5fWNA3uTdqkkMMYCMRTA1LNQxWM'
             : '1oVhM0eH9KrboOjucHj0gK91S4Zk-rZJ8',
         yearModule: { id: 3 },
       },
-      {
-        name: 'Procesos',
-        driveId:
-          `${process.env.NODE_ENV}` === 'production'
-            ? '1ZbkBRLckfGCc8me7vjg46doQiz-pUvVR'
-            : '1tQntjbMg0Pp7Ljxmr0HtSYgGTilY_pFy',
-        yearModule: { id: 4 },
-      },
+
       {
         name: 'Consejos',
         driveId:
-          `${process.env.NODE_ENV}` === 'production'
+          process.env.NODE_ENV === 'production'
             ? '1Qi8PYjtm04i4nBE1QS4c8IKOM_SpMcSi'
             : '1S-mhFxAnGurT1F5pdaYWhN3wkEHWqfg5',
         yearModule: { id: 4 },
       },
-      {
-        name: 'Procesos',
-        driveId:
-          `${process.env.NODE_ENV}` === 'production'
-            ? '1f1bKMbE9oQc0jMpwPeHa0NpgOLNSoVcc'
-            : '1SE_YzWZxsnGO_JJJpOlQFvQ2aXpQEtnD',
-        yearModule: { id: 5 },
-      },
+
       {
         name: 'Consejos',
         driveId:
-          `${process.env.NODE_ENV}` === 'production'
+          process.env.NODE_ENV === 'production'
             ? '1mFhbt1x-4_DzCbdD9cCA-l8L08Nao1Xz'
             : '1mN5zigMN3GtMECSgaftTcMeA9t3-dA_d',
         yearModule: { id: 5 },
       },
-      {
-        name: 'Procesos',
-        driveId:
-          `${process.env.NODE_ENV}` === 'production'
-            ? '1OeTzBDDff1HhQMhkDi87oyQYeDXz23A7'
-            : '1vqNH8ysvQGIrX_4aGiu15dw91bLFPdp3',
-        yearModule: { id: 6 },
-      },
+
       {
         name: 'Consejos',
         driveId:
-          `${process.env.NODE_ENV}` === 'production'
+          process.env.NODE_ENV === 'production'
             ? '1CPM5KDhXVTv2jCbKyz-vYG3GNjlfiENo'
             : '1zFhjioI2sXybhMqEKa8uzOzcOeR_s-ok',
         yearModule: { id: 6 },
       },
-      {
-        name: 'Procesos',
-        driveId:
-          `${process.env.NODE_ENV}` === 'production'
-            ? '1d9IpJjwRYwXq54aHEMGEcMWiVUB6QVH2'
-            : '1h1KTA_--5VPh_r6tHQj9ig-hEGf4ko_3',
-        yearModule: { id: 7 },
-      },
+
       {
         name: 'Consejos',
         driveId:
-          `${process.env.NODE_ENV}` === 'production'
+          process.env.NODE_ENV === 'production'
             ? '122GU2F0WNV70dccHTBp9QlD2ASlmveD6'
             : '1t6HOXcRcas5cuGWneqSn0bP4sVZBRHfP',
         yearModule: { id: 7 },
       },
-      {
-        name: 'Procesos',
-        driveId:
-          `${process.env.NODE_ENV}` === 'production'
-            ? '1rkc0aI99b60WLw8uspp8gNpe4QhMlpG9'
-            : '1s920jR4Rbcf2JOK1-eXfMzjmV31zDVar',
-        yearModule: { id: 8 },
-      },
+
       {
         name: 'Consejos',
         driveId:
-          `${process.env.NODE_ENV}` === 'production'
+          process.env.NODE_ENV === 'production'
             ? '1GX1keIbHClPiCYE2OUC2sBfczYL-4AWD'
             : '1r080Y4pFOgiODaLGU7YsdKmNmzYPoTun',
         yearModule: { id: 8 },
       },
-      {
-        name: 'Procesos',
-        driveId:
-          `${process.env.NODE_ENV}` === 'production'
-            ? '1amspmIrZ_3rF2VrUvavEHdoRl8ZJefrB'
-            : '1nOk40HGSAvN6QgbJfin7VFsZCHMpbmKT',
-        yearModule: { id: 9 },
-      },
+
       {
         name: 'Consejos',
         driveId:
-          `${process.env.NODE_ENV}` === 'production'
+          process.env.NODE_ENV === 'production'
             ? '1bk5sO1qke-ltrirzN13UX3BZZTMuN0UD'
             : '1vOj_h6NAeHOekPKxw8YSv0fjIbb80tU_',
         yearModule: { id: 9 },
@@ -1277,23 +1221,16 @@ export class LoadDriveMainFolders1704786020632 implements MigrationInterface {
       {
         name: 'Actas de grado',
         driveId:
-          `${process.env.NODE_ENV}` === 'production'
+          process.env.NODE_ENV === 'production'
             ? '1UAVwkySFsU79hLGEeJahECSTdKK9d-Yb'
             : '1brUexewZ6HON8NYFWR1DbQ4zfmBLxhfU',
         yearModule: { id: 10 },
       },
-      {
-        name: 'Procesos',
-        driveId:
-          `${process.env.NODE_ENV}` === 'production'
-            ? '1_vBGsHIIxCGTo7V8fuUVphaKX-Yc3qcM'
-            : '1JQaM9HyFDwIuvteeiwnttU5TZ3ajzy8M',
-        yearModule: { id: 11 },
-      },
+
       {
         name: 'Consejos',
         driveId:
-          `${process.env.NODE_ENV}` === 'production'
+          process.env.NODE_ENV === 'production'
             ? '1_2xDqP4n20xbOjP2MMbh3XnBSNxhJMRa'
             : '1iVcnqDVyj2CzD4HEQpuG50ad_UuTFGeY',
         yearModule: { id: 11 },

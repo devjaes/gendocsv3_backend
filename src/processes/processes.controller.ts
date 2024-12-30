@@ -14,7 +14,7 @@ import { CreateProcessDto } from './dto/create-process.dto'
 import { UpdateProcessDto } from './dto/update-process.dto'
 import { ApiResponse, ApiTags } from '@nestjs/swagger'
 import { ResponseProcessDto } from './dto/response-process.dto'
-import { PaginationDto } from '../shared/dtos/pagination.dto'
+import { PaginationDTO } from '../shared/dtos/pagination.dto'
 import { UpdateProcessBulkItemDto } from './dto/update-processes-bulk.dto'
 import { ProcessFiltersDto } from './dto/process-filters.dto'
 import { ApiResponseDto } from '../shared/dtos/api-response.dto'
@@ -47,7 +47,7 @@ export class ProcessesController {
 
   @ApiResponse({ isArray: true, type: ResponseProcessDto })
   @Get()
-  async getProcesses(@Query() paginationDto: PaginationDto) {
+  async getProcesses(@Query() paginationDto: PaginationDTO) {
     return new ApiResponseDto(
       'Lista de procesos',
       await this.processesService.getProcessesByModuleId(paginationDto),

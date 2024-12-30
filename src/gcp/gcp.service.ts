@@ -96,14 +96,34 @@ export class GcpService {
     }
   }
 
+  public async getPermissionIdByEmailAddress(
+    assetId: string,
+    email: string,
+  ): Promise<string> {
+    const { data } = await this.drive.permissions.list({
+      fileId: assetId,
+    })
+
+    const permission = data.permissions.find(
+      (perm) => perm.emailAddress === email,
+    )
+
+    return permission.id
+  }
+
   async unshareAsset(
     assetId: string,
     email: string,
   ): Promise<ReturnMethodDto<boolean>> {
     try {
+      const permissionId = await this.getPermissionIdByEmailAddress(
+        assetId,
+        email,
+      )
+
       await this.drive.permissions.delete({
         fileId: assetId,
-        permissionId: email,
+        permissionId,
       })
 
       return new ReturnMethodDto(true)
@@ -562,7 +582,6 @@ export class GcpService {
             for (const el of element.content) {
               if (el.type === 'text') {
                 // eslint-disable-next-line no-console
-                console.log(el)
                 const textStyle = el.textRunStyle
                   ? {
                       bold: el.textRunStyle.bold,

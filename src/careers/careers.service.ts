@@ -12,7 +12,7 @@ import { ApiResponseDto } from '../shared/dtos/api-response.dto'
 import { ModulesService } from '../modules/modules.service'
 import { CreateModuleDTO } from '../modules/dto/create-module.dto'
 import { FilesService } from '../files/services/files.service'
-import { ModuleEntity } from '../modules/entities/modules.entity'
+import { ModuleEntity } from '../modules/entities/module.entity'
 import { CertificateTypeEntity } from '../degree-certificates/entities/certificate-type.entity'
 import { CertificateTypeCareerEntity } from '../degree-certificates/entities/certicate-type-career.entity'
 

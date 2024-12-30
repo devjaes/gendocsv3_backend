@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common'
 import { DEGREE_CERTIFICATE, IDegreeCertificateFilters } from '../constants'
 import { DegreeCertificateRepository } from '../repositories/degree-certificate-repository'
-import { Not, IsNull, Between } from 'typeorm'
+import { IsNull, Between } from 'typeorm'
 import { DegreeCertificatesService } from './degree-certificates.service'
 import { FilesService } from '../../files/services/files.service'
 import { MIMETYPES } from '../../shared/constants/mime-types'
@@ -11,7 +11,6 @@ import { getFullName, getFullNameWithTitles } from '../../shared/utils/string'
 import { DegreeAttendanceService } from '../../degree-certificate-attendance/degree-certificate-attendance.service'
 import { DEGREE_ATTENDANCE_ROLES } from '../../shared/enums/degree-certificates'
 import { formatDate, formatTime } from '../../shared/utils/date'
-import { DATE_TYPES } from '../../councils/dto/council-filters.dto'
 
 @Injectable()
 export class CertificateReportsService {
@@ -23,37 +22,58 @@ export class CertificateReportsService {
     private readonly certificateAttendanceService: DegreeAttendanceService,
   ) {}
 
-  async getCertificatesReport(
-    degreeCertificateFilters: IDegreeCertificateFilters,
-  ) {
-    const { careerId, startDate, endDate, dateType } = degreeCertificateFilters
+  async getCertificatesReport(filters: IDegreeCertificateFilters) {
+    const { careerId, startDate, endDate } = filters
 
     const subModuleYearModule =
       await this.degreeCertificateService.getCurrentDegreeSubmoduleYearModule()
-    const certificates = await this.degreeCertificateRepository.findManyFor(
-      {
-        where: {
-          career: { id: +careerId },
-          presentationDate:
-            dateType === DATE_TYPES.CREATION ? Not(IsNull()) : IsNull(),
-          isClosed: false,
-          deletedAt: IsNull(),
-          submoduleYearModule: { id: subModuleYearModule.id },
-          createdAt:
-            dateType === DATE_TYPES.CREATION
+    const certificates =
+      await this.degreeCertificateRepository.findManyForWithAttendance(
+        {
+          where: {
+            career: { id: +careerId },
+            presentationDate: filters.isEnd
               ? Between(
                   new Date(new Date(startDate).setHours(0, 0, 0, 0)),
                   new Date(new Date(endDate).setHours(23, 59, 59, 999)),
                 )
-              : Not(IsNull()),
-        },
+              : IsNull(),
 
-        order: { createdAt: 'ASC' },
-      },
-      degreeCertificateFilters.field,
+            isClosed: false,
+            deletedAt: IsNull(),
+            submoduleYearModule: { id: subModuleYearModule.id },
+          },
+
+          order: { number: filters.order || 'ASC' },
+        },
+        filters.field,
+      )
+
+    const certificatesWithNumber = certificates.degreeCertificates.filter(
+      (certificate) => certificate.number,
     )
 
-    return certificates
+    const certificatesWithoutNumber = certificates.degreeCertificates.filter(
+      (certificate) => !certificate.number,
+    )
+
+    const certificatesSorted = [
+      ...certificatesWithNumber,
+      ...certificatesWithoutNumber,
+    ]
+
+    const filteredAttendance = certificatesSorted.filter((certificate) =>
+      certificate.attendances.find(
+        (item) => item.role === DEGREE_ATTENDANCE_ROLES.PRESIDENT,
+      ),
+    )
+
+    return {
+      ...certificates,
+      degreeCertificates: filters.isEnd
+        ? filteredAttendance
+        : certificatesSorted,
+    }
   }
 
   async generateCertificateReport(
@@ -116,7 +136,7 @@ export class CertificateReportsService {
         (item) => item.role === DEGREE_ATTENDANCE_ROLES.PRESIDENT,
       )
       const representantName = representant
-        ? getFullName(representant.functionary)
+        ? getFullNameWithTitles(representant.functionary)
         : ''
 
       const mentor = attendance?.find(
@@ -174,7 +194,7 @@ export class CertificateReportsService {
         dni: certificate.student.dni,
         studentName: getFullName(certificate.student),
         representantName,
-        degreeModality: certificate.degreeModality.name.toUpperCase(),
+        degreeModality: certificate.certificateType.name.toUpperCase(),
         mentorName,
         topic: certificate.topic,
         firstMainMemberName,

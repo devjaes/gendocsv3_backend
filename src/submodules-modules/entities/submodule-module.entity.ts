@@ -1,6 +1,8 @@
-import { ModuleEntity } from '../../modules/entities/modules.entity'
+import { ModuleEntity } from '../../modules/entities/module.entity'
 import { SubmoduleEntity } from '../../submodules/entities/submodule.entity'
 import {
+  BaseEntity,
+  Column,
   CreateDateColumn,
   Entity,
   JoinColumn,
@@ -10,7 +12,7 @@ import {
 } from 'typeorm'
 
 @Entity('submodules_modules')
-export class SubmoduleModuleEntity {
+export class SubmoduleModuleEntity extends BaseEntity {
   @PrimaryColumn({
     name: 'submodule_id',
     type: 'int',
@@ -23,6 +25,13 @@ export class SubmoduleModuleEntity {
   })
   moduleId: number
 
+  @Column({
+    name: 'drive_id',
+    type: 'varchar',
+    nullable: true,
+  })
+  driveId: string
+
   @ManyToOne(() => SubmoduleEntity, {
     onDelete: 'NO ACTION',
     onUpdate: 'NO ACTION',
@@ -31,7 +40,7 @@ export class SubmoduleModuleEntity {
     name: 'submodule_id',
     referencedColumnName: 'id',
   })
-  submodule: SubmoduleEntity[]
+  submodule: SubmoduleEntity
 
   @ManyToOne(() => ModuleEntity, {
     onDelete: 'NO ACTION',
@@ -41,7 +50,7 @@ export class SubmoduleModuleEntity {
     name: 'module_id',
     referencedColumnName: 'id',
   })
-  module: ModuleEntity[]
+  module: ModuleEntity
 
   @CreateDateColumn({
     name: 'created_at',

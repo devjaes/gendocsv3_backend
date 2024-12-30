@@ -11,14 +11,14 @@ import { CreateUserDTO } from './dto/create-user.dto'
 import { genSalt, hash } from 'bcrypt'
 import { JwtService } from '@nestjs/jwt'
 import { UserAccessModulesService } from '../users-access-modules/users-access-modules.service'
-import { PaginationDto } from '../shared/dtos/pagination.dto'
+import { PaginationDTO } from '../shared/dtos/pagination.dto'
 import { UserFiltersDto } from './dto/user-filters.dto'
 import { ApiResponseDto } from '../shared/dtos/api-response.dto'
 import { FilesService } from '../files/services/files.service'
 import { RolesType } from '../shared/constants/roles'
 import { UsersGateway } from './users.gateway'
 import { IPayload } from '../auth/types/payload.interface'
-import { ModuleEntity } from '../modules/entities/modules.entity'
+import { ModuleEntity } from '../modules/entities/module.entity'
 
 @Injectable()
 export class UsersService {
@@ -35,25 +35,18 @@ export class UsersService {
   ) {}
 
   async getByEmail(email: string) {
-    try {
-      const user = await this.userRepository.findOne({
-        where: {
-          outlookEmail: email,
-          isActive: true,
-        },
-      })
+    const user = await this.userRepository.findOne({
+      where: {
+        outlookEmail: email,
+        isActive: true,
+      },
+    })
 
-      if (!user) {
-        throw new HttpException(
-          'No se encontró el usuario',
-          HttpStatus.NOT_FOUND,
-        )
-      }
-
-      return new ApiResponseDto('Usuario encontrado', user)
-    } catch (error) {
-      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR)
+    if (!user || user == null) {
+      throw new HttpException('No se encontró el usuario', HttpStatus.NOT_FOUND)
     }
+
+    return new ApiResponseDto('Usuario encontrado', user)
   }
 
   async create(user: CreateUserDTO) {
@@ -80,6 +73,7 @@ export class UsersService {
       ...user,
       accessModules: [],
       password,
+      accessCareersDegCert: [],
     })
 
     if (!userEntity) {
@@ -104,6 +98,16 @@ export class UsersService {
     }
 
     userEntity.accessModules = data.modules
+
+    if (user.accessCareersDegCert && user.accessCareersDegCert.length > 0) {
+      const { data: careersAccess } =
+        await this.userAccessModulesService.createCareerAccessDegCert({
+          userId: userSaved.id,
+          careerIds: user.accessCareersDegCert,
+        })
+
+      userSaved.accessCareersDegCert = careersAccess.careers
+    }
 
     userSaved = await this.userRepository.save(userEntity)
 
@@ -144,6 +148,7 @@ export class UsersService {
       let password = ''
       const hasNewPassword = user.password !== undefined
       const hasAccessModules = !!user.accessModules
+      const hasCareersAccess = !!user.accessCareersDegCert
       const userFound = await this.userRepository.findOne({
         where: {
           id,
@@ -175,11 +180,30 @@ export class UsersService {
         )
       }
 
+      if (hasCareersAccess) {
+        const result =
+          await this.userAccessModulesService.updateCareerAccessDegCert({
+            userId: id,
+            careerIds: user.accessCareersDegCert,
+          })
+
+        if (result.data.careers.length === 0) {
+          throw new HttpException(
+            'No se pudo actualizar los modulos del usuario',
+            HttpStatus.CONFLICT,
+          )
+        }
+        userToUpdate.accessCareersDegCert = result.data.careers.map(
+          (module) => module.id,
+        )
+      }
       const userGetted = await this.userRepository.findOne({
         where: {
           id,
         },
-        relations: ['accessModules'],
+        relations: {
+          accessCareersDegCert: true,
+        },
       })
 
       if (!userGetted) {
@@ -198,6 +222,51 @@ export class UsersService {
         }
       }
 
+      const willBeActive =
+        user.isActive && user.isActive === true ? true : userGetted.isActive
+      const ischangedEmail =
+        user.googleEmail && user.googleEmail !== userGetted.googleEmail
+
+      if (user.role && userGetted.role !== user.role && willBeActive) {
+        let isChanged = false
+        let role = undefined
+
+        if (
+          user.role === RolesType.READER &&
+          userGetted.role !== RolesType.READER
+        ) {
+          role = 'reader'
+          isChanged = true
+        } else if (
+          user.role !== RolesType.READER &&
+          userGetted.role === RolesType.READER
+        ) {
+          role = 'writer'
+          isChanged = true
+        }
+
+        if (isChanged && role !== undefined) {
+          const email = ischangedEmail
+            ? user.googleEmail
+            : userGetted.googleEmail
+
+          const { error, data: isShared } = await this.filesService.shareAsset(
+            process.env.GOOGLE_DRIVE_SHARABLE_FOLDER_ID,
+            email,
+            role,
+          )
+
+          if (error || !isShared) {
+            await this.userRepository.update({ id }, currentUser)
+
+            throw new HttpException(
+              'No se pudo otorgar permisos en Google Drive, verifique el correo de gmail del usuario',
+              HttpStatus.CONFLICT,
+            )
+          }
+        }
+      }
+
       await this.userRepository.update(
         {
           id,
@@ -205,6 +274,7 @@ export class UsersService {
         {
           ...userToUpdate,
           accessModules: undefined,
+          accessCareersDegCert: undefined,
         },
       )
 
@@ -212,29 +282,18 @@ export class UsersService {
         where: {
           id,
         },
-        relations: ['accessModules'],
+        relations: {
+          accessModules: true,
+          accessCareersDegCert: true,
+        },
       })
 
-      if (user.googleEmail && user.googleEmail !== currentUser.googleEmail) {
-        const { error, data: isShared } = await this.filesService.shareAsset(
-          `${process.env.GOOGLE_DRIVE_SHARABLE_FOLDER_ID}`,
-          user.googleEmail,
-          userUpdated.role === RolesType.READER ? 'reader' : 'writer',
-        )
-
-        if (error || !isShared) {
-          await this.userRepository.update({ id }, currentUser)
-
-          throw new HttpException(
-            'No se pudo otorgar permisos en Google Drive, verifique el correo de gmail del usuario',
-            HttpStatus.CONFLICT,
-          )
-        }
-
+      if (ischangedEmail) {
         const { error: unsharedError, data: isUnshared } =
-          await this.filesService.unshareAsset(
+          await this.filesService.shareAsset(
             `${process.env.GOOGLE_DRIVE_SHARABLE_FOLDER_ID}`,
             currentUser.googleEmail,
+            'reader',
           )
 
         if (!isUnshared || unsharedError) {
@@ -248,14 +307,21 @@ export class UsersService {
       }
 
       if (user.isActive !== undefined && user.isActive === false) {
-        const { error, data: isUnshared } =
-          await this.filesService.unshareAsset(
-            `${process.env.GOOGLE_DRIVE_SHARABLE_FOLDER_ID}`,
-            user.googleEmail,
-          )
+        const { error, data: isUnshared } = await this.filesService.shareAsset(
+          `${process.env.GOOGLE_DRIVE_SHARABLE_FOLDER_ID}`,
+          currentUser.googleEmail,
+          'reader',
+        )
 
         if (error || !isUnshared) {
-          await this.userRepository.update({ id }, currentUser)
+          await this.userRepository.update(
+            { id },
+            {
+              ...currentUser,
+              accessModules: undefined,
+              accessCareersDegCert: undefined,
+            },
+          )
 
           throw new HttpException(
             'No se pudo revocar permisos en Google Drive',
@@ -266,6 +332,10 @@ export class UsersService {
 
       const accessModules = userUpdated.accessModules.map(
         (module: ModuleEntity) => module.id,
+      )
+
+      const accessCareersDegCert = userUpdated.accessCareersDegCert.map(
+        (career) => career.id,
       )
 
       const payload: IPayload = {
@@ -279,22 +349,23 @@ export class UsersService {
         role: userUpdated.role,
         isActive: userUpdated.isActive,
         accessModules,
+        accessCareersDegCert,
+      }
+      const userUpdatedPayload = {
+        ...userUpdated,
+        accessModules: userUpdated.accessModules.map((module) => module.id),
+        accessCareersDegCert,
       }
 
-      if (hasAccessModules) {
-        this.usersGateway.handleChangeAccessModules({
-          id,
-          accessModules: userUpdated.accessModules.map((module) => module.id),
-        })
-      }
+      this.usersGateway.handleChangeUser({
+        id,
+        user: payload,
+      })
 
       return new ApiResponseDto(
         'Usuario actualizado, tome en cuenta que la habilitación de permisos de documentos tardará 10-15 minutos en aplicarse',
         {
-          user: {
-            ...userUpdated,
-            accessModules: userUpdated.accessModules.map((module) => module.id),
-          },
+          user: userUpdatedPayload,
           accessToken: this.jwtService.sign(payload),
         },
       )
@@ -314,9 +385,10 @@ export class UsersService {
       throw new HttpException('Usuario no encontrado', HttpStatus.NOT_FOUND)
     }
 
-    const { error, data: isUnshared } = await this.filesService.unshareAsset(
+    const { error, data: isUnshared } = await this.filesService.shareAsset(
       `${process.env.GOOGLE_DRIVE_SHARABLE_FOLDER_ID}`,
       user.googleEmail,
+      'reader',
     )
 
     if (error || !isUnshared) {
@@ -340,9 +412,10 @@ export class UsersService {
     })
   }
 
-  async findAll(paginationDto: PaginationDto) {
-    // eslint-disable-next-line no-magic-numbers
-    const { limit = 5, offset = 0 } = paginationDto
+  async findAll(paginationDto: PaginationDTO) {
+    const { limit, page } = paginationDto
+    const offset = (page - 1) * limit
+
     try {
       const users = await this.userRepository.find({
         select: {
@@ -366,6 +439,9 @@ export class UsersService {
       const usersFound = users.map((user) => ({
         ...user,
         accessModules: user.accessModules.map((module) => module.id),
+        accessCareersDegCert: user.accessCareersDegCert.map(
+          (career) => career.id,
+        ),
       }))
 
       if (!users) {
@@ -384,8 +460,8 @@ export class UsersService {
   }
 
   async findByFilters(filters: UserFiltersDto) {
-    // eslint-disable-next-line no-magic-numbers
-    const { limit = 5, offset = 0 } = filters
+    const { limit, page } = filters
+    const offset = (page - 1) * limit
 
     const qb = this.userRepository.createQueryBuilder('users')
 

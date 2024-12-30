@@ -6,6 +6,14 @@ export enum RolesType {
   API = 'API',
 }
 
+export enum SpanishRolesType {
+  ADMIN = 'Administrador',
+  TEMP_ADMIN = 'Administrador Temporal',
+  WRITER = 'Escritor',
+  READER = 'Lector',
+  API = 'Desarrollador',
+}
+
 export const RolesThatCanMutate = [
   RolesType.ADMIN,
   RolesType.TEMP_ADMIN,
@@ -20,3 +28,5 @@ export const RolesThatCanQuery = [
   RolesType.READER,
   RolesType.API,
 ]
+
+export const AdminRoles = [RolesType.ADMIN, RolesType.TEMP_ADMIN]

@@ -132,8 +132,6 @@ export class DocumentRecopilationService {
     if (!blob) {
       throw new NotFoundException('Documento no encontrado')
     }
-    console.log('test')
-
     const councilPath = getCouncilPath(council)
     const tempDocxPath = `${councilPath}/temp/`
 
