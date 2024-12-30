@@ -1,6 +1,7 @@
 # Proceso de backups
 
-La configuración relacionada a los backups se encuentran en el archivo `scripts/backup.sh` y dentro de `Makefile`. En el siguiente apartado se detalla el proceso de backups.
+La configuración relacionada a los backups se encuentran en el archivo `scripts/backup.sh` y dentro de `Makefile`.
+En el siguiente apartado se detalla el proceso de backups.
 
 ## Configuración (backup.sh)
 
@@ -39,6 +40,3 @@ rm -f "$BACKUP_DIR/$PGDATABASE.sql" || error_exit "Failed to remove .sql file"
 ```bash
 echo "$(date) - Backup created" >> "$BACKUP_DIR/backup.log"
 ```
-
-
-
