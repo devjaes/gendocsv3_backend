@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common'
+import { Module, forwardRef } from '@nestjs/common'
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { CertificateStatusEntity } from '../entities/certificate-status.entity'
 import { CertificateTypeEntity } from '../entities/certificate-type.entity'
@@ -83,13 +83,13 @@ import { CertificateDocumentService } from '../services/certificate-document.ser
       CellsGradeDegreeCertificateTypeEntity,
     ]),
     DegreeCertificateAttendanceModule,
-    YearModuleModule,
+    forwardRef(() => YearModuleModule),
     FilesModule,
     StudentsModule,
     VariablesModule,
     FunctionariesModule,
     NotificationsModule,
   ],
-  exports: [DEGREE_CERTIFICATE.REPOSITORY],
+  exports: [DEGREE_CERTIFICATE.REPOSITORY, CertificateNumerationService],
 })
 export class DegreeCertificatesModule {}

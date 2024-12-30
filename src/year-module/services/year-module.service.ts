@@ -1,17 +1,19 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common'
-import { CreateYearModuleDto } from './dto/create-year-module.dto'
+import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { YearModuleEntity } from './entities/year-module.entity'
 import { Repository } from 'typeorm'
-import { GcpService } from '../gcp/gcp.service'
-import { SubmoduleYearModuleEntity } from './entities/submodule-year-module.entity'
-import { SystemYearEntity } from './entities/system-year.entity'
-import { YearModuleAlreadyExists } from './errors/year-module-already-exists'
-import { YearModuleError } from './errors/year-module-error'
-import { YearModuleNotFound } from './errors/year-module-not-found'
+import { GcpService } from '../../gcp/gcp.service'
+import { BaseError } from '../../shared/utils/error'
+import { CreateYearModuleDto } from '../dto/create-year-module.dto'
+import { SubmoduleYearModuleEntity } from '../entities/submodule-year-module.entity'
+import { SystemYearEntity } from '../entities/system-year.entity'
+import { YearModuleEntity } from '../entities/year-module.entity'
+import { YearModuleAlreadyExists } from '../errors/year-module-already-exists'
+import { YearModuleNotFound } from '../errors/year-module-not-found'
 
 @Injectable()
 export class YearModuleService {
+  log: Logger
+
   constructor(
     @InjectRepository(YearModuleEntity)
     private yearModuleRepository: Repository<YearModuleEntity>,
@@ -23,27 +25,8 @@ export class YearModuleService {
     private readonly systemYearRepository: Repository<SystemYearEntity>,
 
     private gcpService: GcpService,
-  ) {}
-
-  private async setCurrentSystemYear(year: number) {
-    try {
-      const currentYear = await this.systemYearRepository.findOneBy({
-        currentYear: year,
-      })
-
-      if (currentYear) {
-        throw new YearModuleAlreadyExists(
-          `El sistema ya está configurado para el año ${year}`,
-        )
-      } else {
-        await this.systemYearRepository.insert({ currentYear: year })
-      }
-    } catch (e) {
-      throw new YearModuleError({
-        detail: e.message,
-        instance: 'yearModule.errors.setCurrentSystemYear',
-      })
-    }
+  ) {
+    this.log = new Logger(YearModuleService.name)
   }
 
   async getCurrentSystemYear() {
@@ -125,19 +108,21 @@ export class YearModuleService {
 
         await this.submoduleYearModuleRepository.save(actasSubmodule)
       } else {
-        const { data: processesDirectory } =
-          await this.gcpService.createFolderByParentId(
-            'Procesos',
-            auxYearModule.driveId,
-          )
+        if (!createYearModuleDto.isYearUpdate) {
+          const { data: processesDirectory } =
+            await this.gcpService.createFolderByParentId(
+              'Procesos',
+              auxYearModule.driveId,
+            )
 
-        const processesSubmodule = this.submoduleYearModuleRepository.create({
-          name: 'Procesos',
-          driveId: processesDirectory,
-          yearModule: auxYearModule,
-        })
+          const processesSubmodule = this.submoduleYearModuleRepository.create({
+            name: 'Procesos',
+            driveId: processesDirectory,
+            yearModule: auxYearModule,
+          })
 
-        await this.submoduleYearModuleRepository.save(processesSubmodule)
+          await this.submoduleYearModuleRepository.save(processesSubmodule)
+        }
 
         const { data: councilsDirectory } =
           await this.gcpService.createFolderByParentId(
@@ -154,6 +139,8 @@ export class YearModuleService {
         await this.submoduleYearModuleRepository.save(councilsSubmodule)
       }
     } catch (e) {
+      if (e instanceof BaseError) throw e
+
       throw new HttpException(e.message, HttpStatus.INTERNAL_SERVER_ERROR)
     }
   }

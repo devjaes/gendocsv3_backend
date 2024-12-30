@@ -12,6 +12,7 @@ import { CreateDegreeCertificateDto } from '../dto/create-degree-certificate.dto
 import { SubmoduleYearModuleEntity } from '../../year-module/entities/submodule-year-module.entity'
 import { CERT_STATUS_CODE } from '../../shared/enums/degree-certificates'
 import { toSnakeCase } from '../../shared/utils/string'
+import { IDegreeCertificateFilters } from '../constants'
 
 @Injectable()
 export class DegreeCertificateRepository extends Repository<DegreeCertificateEntity> {
@@ -84,7 +85,7 @@ export class DegreeCertificateRepository extends Repository<DegreeCertificateEnt
 
   async findManyFor(
     options: FindManyOptions<DegreeCertificateEntity>,
-    field?: string,
+    filters?: IDegreeCertificateFilters,
   ) {
     const query = this.qb
       .leftJoinAndSelect('degreeCertificate.student', 'student')
@@ -106,13 +107,39 @@ export class DegreeCertificateRepository extends Repository<DegreeCertificateEnt
       .leftJoinAndSelect('degreeCertificate.user', 'user')
       .where(options.where)
 
-    if (field) {
+    if (filters.field) {
       query.andWhere(
         "( (:term :: VARCHAR ) IS NULL OR CONCAT_WS(' ', student.firstName, student.secondName, student.firstLastName, student.secondLastName) ILIKE :term OR student.dni ILIKE :term )",
         {
-          term: field ? `%${field.trim()}%` : null,
+          term: filters.field ? `%${filters.field.trim()}%` : null,
         },
       )
+    }
+
+    if (filters.startDate && filters.endDate) {
+      if (filters.startDate && !filters.endDate) {
+        query.andWhere('degreeCertificate.presentationDate >= :startDate', {
+          startDate: filters.startDate,
+        })
+      }
+      if (!filters.startDate && filters.endDate) {
+        const endDate = new Date(filters.endDate)
+        endDate.setHours(23, 59, 59, 999)
+        query.andWhere('degreeCertificate.presentationDate <= :endDate', {
+          endDate,
+        })
+      }
+      if (filters.startDate && filters.endDate) {
+        const endDate = new Date(filters.endDate)
+        endDate.setHours(23, 59, 59, 999)
+        query.andWhere(
+          'degreeCertificate.presentationDate BETWEEN :startDate AND :endDate',
+          {
+            startDate: filters.startDate,
+            endDate,
+          },
+        )
+      }
     }
 
     const countQuery = await query.getCount()

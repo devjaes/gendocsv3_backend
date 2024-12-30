@@ -3,12 +3,12 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { ModuleEntity } from './entities/module.entity'
 import { CreateModuleDTO } from './dto/create-module.dto'
-import { YearModuleService } from '../year-module/year-module.service'
 import { ModulesNotFound } from './errors/module-not-found'
 import { ApiResponseDto } from '../shared/dtos/api-response.dto'
 import { ModulesAlreadyExists } from './errors/module-already-exists'
 import { ModulesError } from './errors/module-error'
 import { FilesService } from '../files/services/files.service'
+import { YearModuleService } from '../year-module/services/year-module.service'
 
 @Injectable()
 export class ModulesService {

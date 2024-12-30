@@ -1,5 +1,6 @@
 import { FunctionaryEntity } from '../../functionaries/entities/functionary.entity'
 import { StudentEntity } from '../../students/entities/student.entity'
+import { UserEntity } from '../../users/entities/users.entity'
 import { ARROGANT_PROFESSORS } from '../enums/degree-certificates'
 
 export const toFirstUpperCase = (text: string): string =>
@@ -8,7 +9,7 @@ export const toFirstUpperCase = (text: string): string =>
     .replace(/(^\w|[\s"']\w|[^\w\s][^\w])/g, (match) => match.toUpperCase())
 
 export const getFullName = (
-  entity: FunctionaryEntity | StudentEntity,
+  entity: FunctionaryEntity | StudentEntity | UserEntity,
 ): string => {
   const clonedObject = { ...entity }
   // const { firstName, secondName, firstLastName, secondLastName } = entity

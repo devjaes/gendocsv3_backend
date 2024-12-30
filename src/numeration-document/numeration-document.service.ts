@@ -15,9 +15,9 @@ import { NumerationByCouncil } from './dto/numeration-by-council.dto'
 import { ApiResponseDto } from '../shared/dtos/api-response.dto'
 import { NumerationConflict } from './errors/numeration-conflict'
 import { NumerationBadRequest } from './errors/numeration-bad-request'
-import { YearModuleService } from '../year-module/year-module.service'
 import { ReserveNumerationDocumentDto } from './dto/reserve-numeration.dto'
 import { NumerationNotFound } from './errors/numeration-not-found'
+import { YearModuleService } from '../year-module/services/year-module.service'
 
 @Injectable()
 export class NumerationDocumentService {

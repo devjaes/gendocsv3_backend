@@ -1,10 +1,9 @@
-import { Inject, Injectable } from '@nestjs/common'
+import { Inject, Injectable, forwardRef } from '@nestjs/common'
 import { IsNull, Not } from 'typeorm'
 import { CreateDegreeCertificateDto } from '../dto/create-degree-certificate.dto'
 import { DegreeCertificateEntity } from '../entities/degree-certificate.entity'
 import { DegreeCertificateBadRequestError } from '../errors/degree-certificate-bad-request'
 import { DegreeCertificateNotFoundError } from '../errors/degree-certificate-not-found'
-import { YearModuleService } from '../../year-module/year-module.service'
 import { DEGREE_MODULES } from '../../shared/enums/degree-certificates'
 import { ApiResponseDto } from '../../shared/dtos/api-response.dto'
 import { FilesService } from '../../files/services/files.service'
@@ -17,6 +16,7 @@ import { DegreeCertificateRepository } from '../repositories/degree-certificate-
 import { DEGREE_CERTIFICATE, IDegreeCertificateFilters } from '../constants'
 import { CertificateNumerationService } from './certificate-numeration.service'
 import { CertificateValidator } from '../validators/certificate-validator'
+import { YearModuleService } from '../../year-module/services/year-module.service'
 
 @Injectable()
 export class DegreeCertificatesService {
@@ -27,6 +27,7 @@ export class DegreeCertificatesService {
     private readonly degreeAttendanceService: DegreeAttendanceService,
     private readonly gradesSheetService: GradesSheetService,
     private readonly certificateStatusService: CertificateStatusService,
+    @Inject(forwardRef(() => CertificateNumerationService))
     private readonly certificateNumerationService: CertificateNumerationService,
 
     @Inject(DEGREE_CERTIFICATE.REPOSITORY)
@@ -35,28 +36,28 @@ export class DegreeCertificatesService {
     private readonly validator: CertificateValidator,
   ) {}
 
-  async findAll(paginationDto: IDegreeCertificateFilters): Promise<
+  async findAll(filters: IDegreeCertificateFilters): Promise<
     ApiResponseDto<{
       count: number
       degreeCertificates: DegreeCertificateEntity[]
     }>
   > {
     // eslint-disable-next-line no-magic-numbers
-    const { limit = 5, page = 1 } = paginationDto
+    const { limit = 5, page = 1 } = filters
     const offset = limit * (page - 1)
 
     const { degreeCertificates, count } =
       await this.degreeCertificateRepository.findManyFor(
         {
           where: {
-            career: { id: Number(paginationDto.careerId) || Not(IsNull()) },
+            career: { id: Number(filters.careerId) || Not(IsNull()) },
             deletedAt: IsNull(),
           },
-          order: { number: paginationDto.order || 'ASC' },
+          order: { number: filters.order || 'ASC' },
           take: limit,
           skip: offset,
         },
-        paginationDto.field,
+        filters,
       )
     const certificatesWithNumber = degreeCertificates.filter(
       (certificate) => certificate.number,

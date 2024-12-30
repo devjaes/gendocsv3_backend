@@ -168,18 +168,21 @@ export class CouncilsService {
 
     const skip = (page - 1) * limit
 
-    const councils = await this.dataSource
+    const qb = this.dataSource
       .createQueryBuilder(CouncilEntity, 'councils')
       .leftJoinAndSelect('councils.user', 'user')
       .leftJoinAndSelect('councils.module', 'module')
       .leftJoinAndSelect('councils.submoduleYearModule', 'submoduleYearModule')
       .leftJoinAndSelect('councils.attendance', 'attendance')
       .leftJoinAndSelect('attendance.functionary', 'functionary')
-      .where('module.id = :moduleId', { moduleId })
-      .orderBy('councils.createdAt', 'DESC')
-      .take(limit)
-      .skip(skip)
-      .getMany()
+    if (moduleId) {
+      qb.where('module.id = :moduleId', { moduleId })
+    }
+    qb.orderBy('councils.createdAt', 'DESC')
+    qb.take(limit)
+    qb.skip(skip)
+
+    const councils = await qb.getMany()
 
     const count = await this.dataSource
       .createQueryBuilder(CouncilEntity, 'councils')
@@ -194,7 +197,12 @@ export class CouncilsService {
   }
 
   async findByFilters(filters: CouncilFiltersDto) {
-    const { moduleId = 0, limit, page } = filters
+    const {
+      moduleId = 0,
+      limit,
+      page,
+      dateType = DATE_TYPES.EJECUTION,
+    } = filters
 
     const offset = (page - 1) * limit
 
@@ -225,25 +233,38 @@ export class CouncilsService {
         },
       )
 
-    const endDate = new Date(filters.endDate || filters.startDate)
-    endDate.setHours(23, 59, 59, 999)
-
-    if (filters.dateType === DATE_TYPES.CREATION) {
-      qb.andWhere(
-        '( (:startDate :: DATE) IS NULL OR councils.createdAt BETWEEN (:startDate :: DATE) AND (:endDate :: DATE) )',
-        {
-          startDate: filters.startDate,
-          endDate,
-        },
-      )
-    } else if (filters.dateType === DATE_TYPES.EJECUTION) {
-      qb.andWhere(
-        '( (:startDate :: DATE) IS NULL OR councils.date BETWEEN (:startDate :: DATE) AND (:endDate :: DATE) )',
-        {
-          startDate: filters.startDate,
-          endDate,
-        },
-      )
+    if (filters.startDate != null || filters.endDate != null) {
+      const endDate = new Date(filters.endDate || filters.startDate)
+      endDate.setHours(23, 59, 59, 999)
+      if (filters.startDate && !filters.endDate) {
+        qb.andWhere(
+          `( councils.${dateType === DATE_TYPES.CREATION ? 'createdAt' : 'date'}
+              >= (:startDate :: DATE) )`,
+          {
+            startDate: filters.startDate,
+          },
+        )
+      } else if (!filters.startDate && filters.endDate) {
+        qb.andWhere(
+          `( councils.${dateType === DATE_TYPES.CREATION ? 'createdAt' : 'date'}
+              <= (:endDate :: DATE) )`,
+          {
+            endDate,
+          },
+        )
+      } else {
+        qb.andWhere(
+          `( (:startDate :: DATE) IS NULL 
+                OR councils.${
+                  dateType === DATE_TYPES.CREATION ? 'createdAt' : 'date'
+                }
+                BETWEEN (:startDate :: DATE) AND (:endDate :: DATE) )`,
+          {
+            startDate: filters.startDate,
+            endDate,
+          },
+        )
+      }
     }
 
     const count = await qb.getCount()

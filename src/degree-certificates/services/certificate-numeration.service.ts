@@ -2,7 +2,6 @@ import { forwardRef, Inject, Injectable } from '@nestjs/common'
 import { DEGREE_CERTIFICATE } from '../constants'
 import { DegreeCertificateRepository } from '../repositories/degree-certificate-repository'
 import { DegreeCertificatesService } from './degree-certificates.service'
-import { YearModuleService } from '../../year-module/year-module.service'
 import { DEGREE_MODULES } from '../../shared/enums/degree-certificates'
 import { Not, IsNull, MoreThan } from 'typeorm'
 import { ApiResponseDto } from '../../shared/dtos/api-response.dto'
@@ -12,6 +11,7 @@ import { DEGREE_CERT_CURRENT_NUMERATIONS } from '../../shared/constants/degree-c
 import { DegreeCertificateEntity } from '../entities/degree-certificate.entity'
 import { formatDateTime } from '../../shared/utils/date'
 import { NotificationsGateway } from '../../notifications/notifications.gateway'
+import { YearModuleService } from '../../year-module/services/year-module.service'
 
 @Injectable()
 export class CertificateNumerationService {

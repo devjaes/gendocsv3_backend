@@ -114,6 +114,7 @@ export class TemplatesService {
     const templates = await this.templateRepository
       .createQueryBuilder('template')
       .leftJoinAndSelect('template.process', 'process')
+      .leftJoinAndSelect('template.user', 'user')
       .where('template.id IN (:...ids)', { ids: templateIds })
       .getMany()
 

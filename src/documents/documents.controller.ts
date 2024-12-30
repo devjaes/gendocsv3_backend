@@ -8,13 +8,14 @@ import {
   ParseIntPipe,
   Query,
   HttpException,
+  Patch,
 } from '@nestjs/common'
 import { DocumentsService } from './services/documents.service'
 import { CreateDocumentDto } from './dto/create-document.dto'
 import { ApiTags } from '@nestjs/swagger'
 import { DocumentRecopilationService } from './services/document-recopilation.service'
 import { ApiResponseDto } from '../shared/dtos/api-response.dto'
-import { PaginationDTO } from '../shared/dtos/pagination.dto'
+import { DocumentFiltersDto } from './dto/document-filters.dto'
 
 @ApiTags('Documents')
 @Controller('documents')
@@ -30,8 +31,8 @@ export class DocumentsController {
   }
 
   @Get()
-  async findAll(@Query() paginationDto: PaginationDTO) {
-    return await this.documentsService.findAll(paginationDto)
+  async findAll(@Query() filters: DocumentFiltersDto) {
+    return await this.documentsService.findAll(filters)
   }
 
   @Get(':id')
@@ -99,5 +100,13 @@ export class DocumentsController {
       // eslint-disable-next-line no-magic-numbers
       return new HttpException('Error al descargar el archivo', 500)
     }
+  }
+
+  @Patch('notify-student/:id')
+  async notifyStudent(
+    @Param('id', ParseIntPipe) id: number,
+    @Query('whatsapp') whatsapp = false,
+  ) {
+    return await this.documentsService.notifyStudent(id, whatsapp)
   }
 }

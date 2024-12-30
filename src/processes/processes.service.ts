@@ -130,9 +130,11 @@ export class ProcessesService {
     const { moduleId, limit, page } = paginationDto
     const offset = (page - 1) * limit
 
-    const qb = this.getBaseQuery()
-      .where('module.id = :moduleId', { moduleId })
-      .orderBy('processes.createdAt', 'DESC')
+    const qb = this.getBaseQuery().orderBy('processes.createdAt', 'DESC')
+
+    if (moduleId != null) {
+      qb.where('module.id = :moduleId', { moduleId })
+    }
 
     const count = await qb.clone().getCount()
 
@@ -175,28 +177,33 @@ export class ProcessesService {
   }
 
   async findByFilters(filters: ProcessFiltersDto) {
-    const { moduleId, limit, page } = filters
+    const { moduleId, limit, page, field = null } = filters
     const offset = (page - 1) * limit
 
     const qb = this.getBaseQuery()
-      .where('module.id = :moduleId', { moduleId })
-      .andWhere(
+    if (moduleId != null) {
+      qb.where('module.id = :moduleId', { moduleId })
+    }
+
+    if (filters.state != null) {
+      qb.andWhere(
         '( (:state :: BOOLEAN) IS NULL OR processes.isActive = (:state :: BOOLEAN) )',
         {
           state: filters.state,
         },
       )
-      .andWhere(
+    }
+
+    if (field != null && field !== '') {
+      qb.andWhere(
         '( (:name :: VARCHAR) IS NULL OR processes.name ILIKE :name  )',
         {
-          name: filters.field && `%${filters.field}%`,
+          name: field && `%${field}%`,
         },
       )
+    }
 
     const count = await qb.getCount()
-    if (count === 0) {
-      throw new NotFoundException('Processes not found')
-    }
 
     const processes = await qb
       .orderBy('processes.createdAt', 'DESC')
