@@ -72,22 +72,23 @@ export class GcpMToolService {
         newProcess.user = { id: 1 } as any
         const newProcessSaved = await newProcess.save()
 
-        try {
-          const result = await this.gcpService.moveAsset(
-            newProcessSaved.driveId,
-            submoduleModule.driveId,
-          )
+        // try {
+        //   const result = await this.gcpService.moveAsset(
+        //     newProcessSaved.driveId,
+        //     submoduleModule.driveId,
+        //   )
 
-          if (result) {
-            await new Promise((resolve) => setTimeout(resolve, 300))
-            this.logger.log(`Process ${newProcessSaved.name} moved`)
-          } else {
-            this.logger.error(`Process ${newProcessSaved.name} not moved`)
-          }
-        } catch (error) {
-          this.logger.error(`Process ${newProcessSaved.name} not moved`)
-          return
-        }
+        //   if (result) {
+        //     await new Promise((resolve) => setTimeout(resolve, 5000))
+        //     this.logger.log(`Process ${newProcessSaved.name} moved`)
+        //   } else {
+        //     this.logger.error(`Process ${newProcessSaved.name} not moved`)
+        //   }
+        // } catch (error) {
+        //   console.error(error)
+        //   this.logger.error(`Process ${newProcessSaved.name} not moved`)
+        //   return
+        // }
 
         const templates = templatesList.templates.filter(
           (template) => template.proceso_id === process.id,
