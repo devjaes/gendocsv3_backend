@@ -63,6 +63,9 @@ export class SysYearUpdateValidator {
           },
         },
       },
+      relations: {
+        module: true,
+      },
     })
 
     if (councils != null && councils.length > 0) {
@@ -77,6 +80,12 @@ export class SysYearUpdateValidator {
         yearModule: {
           year,
         },
+      },
+      relations: {
+        yearModule: {
+          module: true,
+        },
+        council: true,
       },
     })
 
@@ -93,6 +102,9 @@ export class SysYearUpdateValidator {
         },
         isClosed: false,
         deletedAt: IsNull(),
+      },
+      relations: {
+        student: true,
       },
     })
 
@@ -111,6 +123,11 @@ export class SysYearUpdateValidator {
         },
         deletedAt: IsNull(),
         number: IsNull(),
+      },
+      relations: {
+        student: {
+          career: true,
+        },
       },
     })
 

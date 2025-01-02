@@ -803,7 +803,10 @@ export class NumerationDocumentService {
       yearModule.module.id,
     )
 
-    if (createNumerationDocumentDto.number === lastNumeration?.number) {
+    if (
+      createNumerationDocumentDto.number === lastNumeration?.number &&
+      lastNumeration.state === NumerationState.USED
+    ) {
       throw new NumerationConflict('El número ya está en uso')
     }
 
