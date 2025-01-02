@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common'
 import { GcpService } from './gcp.service'
 import { Auth } from '../auth/decorators/auth.decorator'
+import { GcpMToolService } from './gcp-mtool.service'
 
 export interface ITestDto {
   templateId: string
@@ -27,7 +28,10 @@ export interface CreateRecopilationDto {
 
 @Controller('gcp')
 export class GcpController {
-  constructor(private gcpService: GcpService) {}
+  constructor(
+    private gcpService: GcpService,
+    private readonly gcpMToolService: GcpMToolService,
+  ) {}
 
   @Post()
   async templateContent(@Body() data: ITestDto) {
@@ -115,6 +119,15 @@ export class GcpController {
       const document = await this.gcpService.restoreAsset(documentId)
 
       return document
+    } catch (error) {
+      Logger.error(error)
+    }
+  }
+
+  @Patch('migrate-templates')
+  async migrateTemplates() {
+    try {
+      await this.gcpMToolService.migrateTemplatesAndProcesses()
     } catch (error) {
       Logger.error(error)
     }
