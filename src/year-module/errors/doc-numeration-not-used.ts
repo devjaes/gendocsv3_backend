@@ -7,7 +7,7 @@ export class DocNumerationNotUsed extends YearModuleError {
     const detail = numerations
       .map(
         (number) =>
-          `El númbero ${number.number} no ha sido usado en el modulo ${number.yearModule.module.name}`,
+          `El número ${number.number} no ha sido usado en el consejo ${number.council.name} en el módulo ${number.yearModule.module.name}`,
       )
       .join(', ')
     super({

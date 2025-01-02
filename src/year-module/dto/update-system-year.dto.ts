@@ -1,4 +1,4 @@
-export interface updateSystemYearDTO {
+export interface UpdateSystemYearDTO {
   year: number
   userId: number
 }

@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common'
+import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { CareerEntity } from '../../careers/entites/careers.entity'
@@ -10,7 +10,7 @@ import { ApiResponseDto } from '../../shared/dtos/api-response.dto'
 import { NotificationStatus } from '../../shared/enums/notification-status'
 import { formatDateTime } from '../../shared/utils/date'
 import { BaseError } from '../../shared/utils/error'
-import { updateSystemYearDTO } from '../dto/update-system-year.dto'
+import { UpdateSystemYearDTO } from '../dto/update-system-year.dto'
 import { YearModuleError } from '../errors/year-module-error'
 import { SysYearUpdateValidator } from '../validators/sys-year-update-validator'
 import { YearModuleService } from './year-module.service'
@@ -19,6 +19,7 @@ import { SystemYearEntity } from '../entities/system-year.entity'
 
 @Injectable()
 export class SysYearUpdateService {
+  logger = new Logger('SysYearUpdateService')
   constructor(
     @InjectRepository(ModuleEntity)
     private moduleRepository: Repository<ModuleEntity>,
@@ -68,6 +69,10 @@ export class SysYearUpdateService {
       await this.yearModuleService.getCurrentSystemYear()
 
     if (currentSystemYear !== year - 1) {
+      this.logger.error(
+        `El año a actualizar debe ser el año siguiente al actual. Año actual: ${currentSystemYear}, año a actualizar: ${year}`,
+      )
+
       throw new HttpException(
         'El año a actualizar debe ser el año siguiente al actual',
         HttpStatus.BAD_REQUEST,
@@ -98,15 +103,59 @@ export class SysYearUpdateService {
         }
       }
     }
+    this.logger.log('Modulos de carrera creados')
+
+    const FACUModule = await this.moduleRepository.findOne({
+      where: {
+        code: 'FACU',
+      },
+    })
+
+    const SUDEModule = await this.moduleRepository.findOne({
+      where: {
+        code: 'SUDE',
+      },
+    })
+
+    const COMMModule = await this.moduleRepository.findOne({
+      where: {
+        code: 'COMM',
+      },
+    })
+
+    await this.yearModuleService.create({
+      year,
+      module: FACUModule,
+      isYearUpdate: true,
+    })
+
+    await this.yearModuleService.create({
+      year,
+      module: SUDEModule,
+      isYearUpdate: true,
+    })
+
+    await this.yearModuleService.create({
+      year,
+      module: COMMModule,
+      isYearUpdate: true,
+    })
+
+    this.logger.log('Modulos FACU, SUDE y COMM creados')
+
+    this.logger.log('YearModules creados')
 
     await this.setCurrentSystemYear(year)
+
+    this.logger.log('Año del sistema actualizado')
 
     return new ApiResponseDto(`Año del sistema actualizado a ${year}`, {
       success: true,
     })
   }
 
-  async updateSystemYear({ year, userId }: updateSystemYearDTO) {
+  async updateSystemYear({ year, userId }: UpdateSystemYearDTO) {
+    const prevYear = year - 1
     const rootNotification = await this.notificationsService.create({
       isMain: true,
       name: `Actualización del año del sistema - ${formatDateTime(
@@ -134,15 +183,18 @@ export class SysYearUpdateService {
 
     const childNotification = await this.notificationsService.create({
       createdBy: userId,
-      name: 'Validación para actulización de año',
+      name: 'Validación para actualización de año',
       type: 'updateSystemYear',
       status: NotificationStatus.IN_PROGRESS,
       parentId: rootNotification.id,
     })
 
+    this.logger.log('Validando actualización de año')
+
     try {
       try {
         await this.sysYearUpdateValidator.validateYear(year)
+        this.logger.log('Año validado')
       } catch (e) {
         if (e instanceof BaseError) {
           errors.push(e.detail)
@@ -155,7 +207,8 @@ export class SysYearUpdateService {
       }
 
       try {
-        await this.sysYearUpdateValidator.validateCouncilsAreClosed(year)
+        await this.sysYearUpdateValidator.validateCouncilsAreClosed(prevYear)
+        this.logger.log('Consejos validados')
       } catch (e) {
         if (e instanceof BaseError) {
           errors.push(e.detail)
@@ -168,7 +221,8 @@ export class SysYearUpdateService {
       }
 
       try {
-        await this.sysYearUpdateValidator.validateNumDocAreUsed(year)
+        await this.sysYearUpdateValidator.validateNumDocAreUsed(prevYear)
+        this.logger.log('Documentos validados')
       } catch (e) {
         if (e instanceof BaseError) {
           errors.push(e.detail)
@@ -181,7 +235,8 @@ export class SysYearUpdateService {
       }
 
       try {
-        await this.sysYearUpdateValidator.validateDegCertAreClosed(year)
+        await this.sysYearUpdateValidator.validateDegCertAreClosed(prevYear)
+        this.logger.log('Certificados validados')
       } catch (e) {
         if (e instanceof BaseError) {
           errors.push(e.detail)
@@ -194,7 +249,8 @@ export class SysYearUpdateService {
       }
 
       try {
-        await this.sysYearUpdateValidator.validateNumDegCertAreUsed(year)
+        await this.sysYearUpdateValidator.validateNumDegCertAreUsed(prevYear)
+        this.logger.log('Certificados validados')
       } catch (e) {
         if (e instanceof BaseError) {
           errors.push(e.detail)
@@ -206,19 +262,22 @@ export class SysYearUpdateService {
         }
       }
 
-      try {
-        await this.prepareToUpdateSystemYear(year)
-      } catch (e) {
-        if (e instanceof BaseError) {
-          errors.push(e.detail)
-        } else {
-          throw new YearModuleError({
-            detail: e.message,
-            instance: e.stack ?? new Error().stack,
-          })
+      if (!errors || errors.length === 0) {
+        try {
+          await this.prepareToUpdateSystemYear(year)
+        } catch (e) {
+          if (e instanceof BaseError) {
+            errors.push(e.detail)
+          } else {
+            throw new YearModuleError({
+              detail: e.message,
+              instance: e.stack ?? new Error().stack,
+            })
+          }
         }
       }
     } catch (e) {
+      this.logger.error(e)
       errors.push(e.message)
     }
 
@@ -227,11 +286,23 @@ export class SysYearUpdateService {
         childNotification.id,
         errors,
       )
+      this.logger.log(`Errores:\n${childNotification.messages}`)
       rootNotification.status = NotificationStatus.FAILURE
       rootNotification.save()
     } else {
+      childNotification.status = NotificationStatus.COMPLETED
+      childNotification.save()
       rootNotification.status = NotificationStatus.COMPLETED
       rootNotification.save()
     }
+
+    const childNotificationUpdated = await this.notificationsService.findOne(
+      childNotification.id,
+    )
+
+    this.notificationsGateway.handleSendNotification({
+      notification: rootNotification,
+      childs: [childNotificationUpdated],
+    })
   }
 }

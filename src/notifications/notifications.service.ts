@@ -105,7 +105,8 @@ export class NotificationsService {
       }
 
       if (notification.scope.id) {
-        isAvailable = isAvailable && notification.scope.id === userId
+        // eslint-disable-next-line eqeqeq
+        isAvailable = isAvailable && notification.scope.id == userId
       }
 
       return isAvailable

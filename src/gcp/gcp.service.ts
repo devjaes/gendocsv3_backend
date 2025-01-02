@@ -180,7 +180,7 @@ export class GcpService {
       removeParents: this.configService.get('gcp.rootDriveFolderId'),
     })
 
-    return new ApiResponseDto('Documento movido con éxito', data.id)
+    return new ApiResponseDto('Documento o carpeta movido con éxito', data.id)
   }
 
   async exportAsset(assetId: string, mimeType: string) {

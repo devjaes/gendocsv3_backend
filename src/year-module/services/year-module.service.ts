@@ -77,7 +77,7 @@ export class YearModuleService {
 
       if (alreadyExists) {
         throw new YearModuleAlreadyExists(
-          `El módulo ${createYearModuleDto.module.name} con año ${createYearModuleDto.year}`,
+          `El módulo ${createYearModuleDto.module.name} con año ${createYearModuleDto.year} ya existe`,
         )
       }
 

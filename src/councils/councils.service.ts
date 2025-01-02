@@ -308,7 +308,7 @@ export class CouncilsService {
     })
 
     if (!council) {
-      throw new NotFoundException(`Council not found with id ${id}`)
+      throw new NotFoundException(`Consejo no encontrado con id ${id}`)
     }
 
     await this.documentsService.recreateDocumentsByCouncil(council, updatedBy)
@@ -355,7 +355,7 @@ export class CouncilsService {
 
           if (!student) {
             throw new NotFoundException(
-              `Student not found with dni ${item.member}`,
+              `Estudiante no encontrado con cédula ${item.member}`,
             )
           }
 
@@ -369,7 +369,7 @@ export class CouncilsService {
 
           if (!functionary) {
             throw new NotFoundException(
-              `Functionary not found with dni ${item.member}`,
+              `Funcionario con posición ${item.positionName}`,
             )
           }
 
@@ -388,7 +388,7 @@ export class CouncilsService {
 
         if (!attendance) {
           throw new NotFoundException(
-            `Attendance not found with positionName ${item.positionName} and positionOrder ${item.positionOrder}`,
+            `Asistente ${item.positionName} y posición ${item.positionOrder} no encontrado`,
           )
         }
 
@@ -411,12 +411,15 @@ export class CouncilsService {
       })
 
       if (!updatedCouncil) {
-        throw new NotFoundException(`Council not found with id ${id}`)
+        throw new NotFoundException(`Consejo con id ${id} no encontrado`)
       }
 
       const councilUpdated = await this.councilRepository.save(updatedCouncil)
 
-      if (currentCouncil.date !== updateCouncilDto.date) {
+      if (
+        updateCouncilDto.date &&
+        currentCouncil.date !== updateCouncilDto.date
+      ) {
         this.regenerateCouncilDocuments(id, updateCouncilDto.userId)
       }
 
@@ -432,14 +435,15 @@ export class CouncilsService {
     })
 
     if (!updatedCouncil) {
-      throw new NotFoundException(`Council not found with id ${id}`)
+      throw new NotFoundException(`Consejo con id ${id} no encontrado`)
     }
 
     const councilUpdated = await this.councilRepository.save(updatedCouncil)
 
     if (
-      currentCouncil.date !== updateCouncilDto.date ||
-      currentCouncil.type !== updateCouncilDto.type
+      (updateCouncilDto.date || updateCouncilDto.type) &&
+      (currentCouncil.date !== updateCouncilDto.date ||
+        currentCouncil.type !== updateCouncilDto.type)
     ) {
       this.regenerateCouncilDocuments(id, updateCouncilDto.userId)
     }

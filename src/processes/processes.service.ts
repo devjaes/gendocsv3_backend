@@ -242,9 +242,7 @@ export class ProcessesService {
 
   async update(id: number, updateProcessDto: UpdateProcessDto) {
     try {
-      const qb = this.getBaseQuery()
-        .leftJoinAndSelect('processes.templateProcesses', 'templates')
-        .where('processes.id = :id', { id })
+      const qb = this.getBaseQuery().where('processes.id = :id', { id })
 
       const process = await qb.getOne()
 
@@ -261,7 +259,7 @@ export class ProcessesService {
         throw new BadRequestException('Process not updated')
       }
 
-      if (updateProcessDto.name) {
+      if (updateProcessDto.name && process.name !== updateProcessDto.name) {
         await this.fileService.renameAsset(
           updatedProcess.driveId,
           updateProcessDto.name,
@@ -275,6 +273,7 @@ export class ProcessesService {
         new ResponseProcessDto(responseProcess),
       )
     } catch (error) {
+      console.error(error)
       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR)
     }
   }
