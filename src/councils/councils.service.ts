@@ -25,6 +25,7 @@ import { CouncilsThatOverlapValidator } from './validators/councils-that-overlap
 import { EmailService } from '../email/services/email.service'
 import { NotifyMembersDTO } from './dto/notify-members.dto'
 import { DocumentsService } from '../documents/services/documents.service'
+import { YearModuleService } from '../year-module/services/year-module.service'
 
 @Injectable()
 export class CouncilsService {
@@ -46,12 +47,14 @@ export class CouncilsService {
     private readonly emailService: EmailService,
     @Inject(DocumentsService)
     private readonly documentsService: DocumentsService,
+    @Inject(YearModuleService)
+    private readonly yearModuleService: YearModuleService,
   ) {}
 
   async create(data: CreateCouncilDto) {
     await new CouncilsThatOverlapValidator(this.dataSource).validate(data)
 
-    const year = new Date().getFullYear()
+    const year = await this.yearModuleService.getCurrentSystemYear()
 
     const yearModule = await this.dataSource.manager
       .createQueryBuilder(YearModuleEntity, 'yearModules')
@@ -62,7 +65,7 @@ export class CouncilsService {
       .getOne()
 
     if (!yearModule) {
-      throw new NotFoundException('Year module not found')
+      throw new NotFoundException('Modulo anual no encontrado')
     }
 
     const submoduleYearModule =
@@ -72,7 +75,7 @@ export class CouncilsService {
       })
 
     if (!submoduleYearModule) {
-      throw new NotFoundException('Submodule year module not found')
+      throw new NotFoundException('Submódulo del año no encontrado')
     }
 
     const { data: driveId } = await this.filesService.createFolderByParentId(

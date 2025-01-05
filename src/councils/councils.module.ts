@@ -11,12 +11,14 @@ import { FunctionaryEntity } from '../functionaries/entities/functionary.entity'
 import { StudentEntity } from '../students/entities/student.entity'
 import { EmailModule } from '../email/email.module'
 import { DocumentsModule } from '../documents/documents.module'
+import { YearModuleModule } from '../year-module/year-module.module'
 
 @Module({
   imports: [
     FilesModule,
     EmailModule,
     DocumentsModule,
+    YearModuleModule,
     TypeOrmModule.forFeature([
       CouncilEntity,
       CouncilAttendanceEntity,
