@@ -19,10 +19,11 @@ export enum DEFAULT_VARIABLE {
   NUMDOC = '{{NUMDOC}}',
 
   /**
-   * Variables utilizadas para reemplazar datos de DOCENTES
+   * Variables utilizadas para reemplazar datos de DOCENTES en CONSEJOS
    */
   PREFIX_DOCENTES = 'docentes',
   DOCENTE_N = '{{DOCENTE_N_$i}}',
+  DOCENTE_CARGO_N = '{{DOCENTE_CARGO_N_$i}}',
 
   /**
    * Variables utilizadas para reemplazar datos para de ESTUDIANTE

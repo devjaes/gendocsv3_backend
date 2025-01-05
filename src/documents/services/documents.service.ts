@@ -151,6 +151,7 @@ export class DocumentsService {
 
         functionariesData = await this.variableService.getFunctionaryVariables(
           documentFunctionariesSaved,
+          savedDocument.numerationDocument.council,
         )
       }
 

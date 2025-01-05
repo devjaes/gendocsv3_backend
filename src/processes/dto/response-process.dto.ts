@@ -28,7 +28,7 @@ export class ResponseProcessDto {
             (templateProcess) =>
               new ResponseTemplateDto({
                 ...templateProcess,
-                user: { id: process.user.id },
+                user: process.user,
                 process: { id: process.id } as unknown as ProcessEntity,
               } as TemplateProcess),
           )

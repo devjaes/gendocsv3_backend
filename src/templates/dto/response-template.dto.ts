@@ -1,3 +1,4 @@
+import { getFullName } from '../../shared/utils/string'
 import { TemplateProcess } from '../entities/template-processes.entity'
 
 export class ResponseTemplateDto {
@@ -12,6 +13,7 @@ export class ResponseTemplateDto {
     this.hasStudent = template.hasStudent
     this.processId = template.process.id
     this.userId = template.user.id
+    this.userName = template.user ? getFullName(template.user) : null
   }
 
   id: number
@@ -24,4 +26,5 @@ export class ResponseTemplateDto {
   hasStudent: boolean
   processId: number
   userId: number
+  userName: string
 }
