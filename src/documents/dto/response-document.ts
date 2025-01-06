@@ -6,6 +6,8 @@ export class ResponseDocumentDto {
     this.id = document.id
     this.number = formatNumeration(document.numerationDocument.number)
     this.councilId = document.numerationDocument.council.id
+    this.councilName = document.numerationDocument.council.name
+    this.templateName = document.templateProcess.name
     this.createdAt = document.createdAt
     this.driveId = document.driveId
     this.userId = document.user.id
@@ -27,11 +29,13 @@ export class ResponseDocumentDto {
   id: number
   number: string
   councilId: number
+  councilName: string
   createdAt: Date
   driveId: string
   userId: number
   userName: string
   templateId: number
+  templateName: string
   studentId: number
   studentName: string
   functionaries: {

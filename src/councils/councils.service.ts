@@ -421,7 +421,9 @@ export class CouncilsService {
 
       if (
         updateCouncilDto.date &&
-        currentCouncil.date !== updateCouncilDto.date
+        // eslint-disable-next-line eqeqeq
+        new Date(currentCouncil.date).toString() !=
+          new Date(updateCouncilDto.date).toString()
       ) {
         this.regenerateCouncilDocuments(id, updateCouncilDto.userId)
       }
@@ -445,8 +447,11 @@ export class CouncilsService {
 
     if (
       (updateCouncilDto.date || updateCouncilDto.type) &&
-      (currentCouncil.date !== updateCouncilDto.date ||
-        currentCouncil.type !== updateCouncilDto.type)
+      // eslint-disable-next-line eqeqeq
+      (new Date(currentCouncil.date).toString() !=
+        new Date(updateCouncilDto.date).toString() ||
+        // eslint-disable-next-line eqeqeq
+        currentCouncil.type != updateCouncilDto.type)
     ) {
       this.regenerateCouncilDocuments(id, updateCouncilDto.userId)
     }

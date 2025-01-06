@@ -488,6 +488,7 @@ export class VariablesService {
             : (document as DegreeCertificateEntity).number,
         ),
         [DEFAULT_VARIABLE.YEAR]: document.createdAt.getFullYear().toString(),
+        [DEFAULT_VARIABLE.Y]: document.createdAt.getFullYear().toString(),
       }
 
       return new ApiResponseDto(
