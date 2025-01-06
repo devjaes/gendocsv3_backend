@@ -14,6 +14,7 @@ import { ResponseTemplateDto } from './dto/response-template.dto'
 import { ApiResponseDto } from '../shared/dtos/api-response.dto'
 import { ProcessesService } from '../processes/processes.service'
 import { MigrateTemplatesToNewProcessDto } from './dto/migrate-templates-to-new-process.dto'
+import { UserEntity } from '../users/entities/users.entity'
 
 @Injectable()
 export class TemplatesService {
@@ -32,6 +33,14 @@ export class TemplatesService {
       process: { id: createTemplateDto.processId },
       user: { id: createTemplateDto.userId },
     })
+
+    const user = await this.dataSource.getRepository(UserEntity).findOne({
+      where: { id: createTemplateDto.userId },
+    })
+
+    if (!user) {
+      throw new BadRequestException('Usuario no encontrado')
+    }
 
     const qb = this.dataSource
       .createQueryBuilder(ProcessEntity, 'process')
@@ -53,7 +62,7 @@ export class TemplatesService {
 
     return new ApiResponseDto(
       'Plantilla creada correctamente',
-      new ResponseTemplateDto(savedTemplate),
+      new ResponseTemplateDto({ ...savedTemplate, user } as TemplateProcess),
     )
   }
 

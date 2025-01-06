@@ -164,12 +164,20 @@ export class VariablesService {
 
     const functionariesVariables = [
       {
-        variable: DEFAULT_VARIABLE.DOCENTE_N.replace('$i', '1'),
-        example: 'Ing. Juan Pérez',
+        variable: DEFAULT_VARIABLE.DOCENTE_N.replace('$i', '0'),
+        example: 'Ing. Juan Pérez Msc.',
       },
       {
-        variable: DEFAULT_VARIABLE.DOCENTE_N.replace('$i', '2'),
-        example: 'Ing. Juan Pérez',
+        variable: DEFAULT_VARIABLE.DOCENTE_N.replace('$i', '1'),
+        example: 'Ing. Elisa Pérez Msc',
+      },
+      {
+        variable: DEFAULT_VARIABLE.DOCENTE_CARGO_N.replace('$i', '0'),
+        example: 'Coordinador de carrera',
+      },
+      {
+        variable: DEFAULT_VARIABLE.DOCENTE_CARGO_N.replace('$i', '1'),
+        example: 'Secretaria de carrera',
       },
     ]
     const councilVariables = [
@@ -480,6 +488,7 @@ export class VariablesService {
             : (document as DegreeCertificateEntity).number,
         ),
         [DEFAULT_VARIABLE.YEAR]: document.createdAt.getFullYear().toString(),
+        [DEFAULT_VARIABLE.Y]: document.createdAt.getFullYear().toString(),
       }
 
       return new ApiResponseDto(
@@ -683,16 +692,18 @@ export class VariablesService {
 
   async getFunctionaryVariables(
     documentFunctionaries: DocumentFunctionaryEntity[],
+    council: CouncilEntity,
   ) {
     try {
       const variables = {}
-      documentFunctionaries.forEach(
-        (documentFunctionary, index) =>
-          // eslint-disable-next-line no-extra-parens
-          (variables[
-            DEFAULT_VARIABLE.DOCENTE_N.replace('$i', (index + 1).toString())
-          ] = getFullName(documentFunctionary.functionary)),
-      )
+      documentFunctionaries.forEach((documentFunctionary, index) => {
+        // eslint-disable-next-line no-extra-parens
+        variables[DEFAULT_VARIABLE.DOCENTE_N.replace('$i', index.toString())] =
+          getFullName(documentFunctionary.functionary)
+        variables[
+          DEFAULT_VARIABLE.DOCENTE_CARGO_N.replace('$i', index.toString())
+        ] = this.getCouncilMemberPositionVariable(documentFunctionary, council)
+      })
 
       return new ApiResponseDto(
         'Variables de docentes encontradas con éxito',
@@ -1107,5 +1118,22 @@ export class VariablesService {
     } catch (error) {
       throw new InternalServerErrorException(error.message)
     }
+  }
+  async getCouncilMemberPositionVariable(
+    docFunc: DocumentFunctionaryEntity,
+    council: CouncilEntity,
+  ) {
+    const attendance = await CouncilAttendanceEntity.findOne({
+      where: {
+        functionary: {
+          id: docFunc.functionary.id,
+        },
+        council: {
+          id: council.id,
+        },
+      },
+    })
+
+    return attendance.positionName
   }
 }

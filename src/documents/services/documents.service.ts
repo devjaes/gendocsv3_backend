@@ -151,6 +151,7 @@ export class DocumentsService {
 
         functionariesData = await this.variableService.getFunctionaryVariables(
           documentFunctionariesSaved,
+          savedDocument.numerationDocument.council,
         )
       }
 
@@ -237,12 +238,14 @@ export class DocumentsService {
         )
       }
 
-      if (document) {
+      if (document && document.id) {
         await this.documentsRepository.delete(document.id)
       }
       if (numeration) {
         await this.numerationDocumentService.remove(numeration.id)
       }
+
+      console.error(error)
 
       throw new Error(error.message)
     }
