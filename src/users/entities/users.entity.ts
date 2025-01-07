@@ -64,7 +64,6 @@ export class UserEntity extends BaseAppEntity {
   })
   @Column({
     name: 'outlook_email',
-    unique: true,
     type: 'varchar',
     length: 255,
   })
