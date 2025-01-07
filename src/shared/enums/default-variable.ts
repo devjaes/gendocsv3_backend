@@ -10,6 +10,7 @@ export enum DEFAULT_VARIABLE {
   FECHAUP = '{{FECHAUP}}',
   SESION = '{{SESION}}',
   RESPONSABLE = '{{RESPONSABLE}}',
+  RESPONSABLE_SIN_TITU = '{{RESPONSABLE_SIN_TITU}}',
 
   /**
    * Variables utilizadas para reemplazar datos para información en GENERAL
@@ -23,6 +24,7 @@ export enum DEFAULT_VARIABLE {
    */
   PREFIX_DOCENTES = 'docentes',
   DOCENTE_N = '{{DOCENTE_N_$i}}',
+  DOCENTE_N_SIN_TITU = '{{DOCENTE_N_$i_SIN_TITU}}',
   DOCENTE_CARGO_N = '{{DOCENTE_CARGO_N_$i}}',
 
   /**

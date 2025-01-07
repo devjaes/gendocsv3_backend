@@ -172,6 +172,10 @@ export class VariablesService {
         example: 'Ing. Elisa Pérez Msc',
       },
       {
+        variable: DEFAULT_VARIABLE.DOCENTE_N_SIN_TITU.replace('$i', '1'),
+        example: 'Elisa Pérez',
+      },
+      {
         variable: DEFAULT_VARIABLE.DOCENTE_CARGO_N.replace('$i', '0'),
         example: 'Coordinador de carrera',
       },
@@ -188,6 +192,10 @@ export class VariablesService {
       {
         variable: DEFAULT_VARIABLE.RESPONSABLE,
         example: 'Ing. Juan Pérez',
+      },
+      {
+        variable: DEFAULT_VARIABLE.RESPONSABLE_SIN_TITU,
+        example: 'Juan Pérez',
       },
       {
         variable: DEFAULT_VARIABLE.NUMACT,
@@ -521,7 +529,8 @@ export class VariablesService {
           document.numerationDocument.council.type.toLowerCase(),
         [DEFAULT_VARIABLE.SESIONUP]:
           document.numerationDocument.council.type.toUpperCase(),
-        [DEFAULT_VARIABLE.RESPONSABLE]: `${getFullName(functionary)}`,
+        [DEFAULT_VARIABLE.RESPONSABLE]: `${getFullNameWithTitles(functionary)}`,
+        [DEFAULT_VARIABLE.RESPONSABLE_SIN_TITU]: `${getFullName(functionary)}`,
       }
 
       return new ApiResponseDto(
@@ -699,7 +708,10 @@ export class VariablesService {
       documentFunctionaries.forEach((documentFunctionary, index) => {
         // eslint-disable-next-line no-extra-parens
         variables[DEFAULT_VARIABLE.DOCENTE_N.replace('$i', index.toString())] =
-          getFullName(documentFunctionary.functionary)
+          getFullNameWithTitles(documentFunctionary.functionary)
+        variables[
+          DEFAULT_VARIABLE.DOCENTE_N_SIN_TITU.replace('$i', index.toString())
+        ] = getFullName(documentFunctionary.functionary)
         variables[
           DEFAULT_VARIABLE.DOCENTE_CARGO_N.replace('$i', index.toString())
         ] = this.getCouncilMemberPositionVariable(documentFunctionary, council)

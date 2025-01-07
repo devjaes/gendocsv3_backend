@@ -73,8 +73,9 @@ export class NumerationDocumentService {
   }
 
   async getNextNumberToRegister(moduleId: number) {
+    const systemYear = await this.yearModuleService.getCurrentSystemYear()
     const yearModule = await this.dataSource.manager.findOne(YearModuleEntity, {
-      where: { module: { id: moduleId } },
+      where: { module: { id: moduleId }, year: systemYear },
     })
 
     if (!yearModule) {
@@ -127,11 +128,13 @@ export class NumerationDocumentService {
   }
 
   async getLastRegisterNumeration(moduleId: number) {
+    const systemYear = await this.yearModuleService.getCurrentSystemYear()
     const yearModule = await this.dataSource.manager
       .getRepository(YearModuleEntity)
       .createQueryBuilder('yearModule')
       .leftJoinAndSelect('yearModule.module', 'module')
       .where('module.id = :moduleId', { moduleId })
+      .andWhere('yearModule.year = :year', { year: systemYear })
       .getOne()
 
     if (!yearModule || yearModule === null) {
@@ -764,7 +767,7 @@ export class NumerationDocumentService {
   }
 
   async getAvailableCouncilNumeration(councilId: number) {
-    const availableCounsilNumeration = await this.dataSource.manager
+    const availableCouncilNumeration = await this.dataSource.manager
       .getRepository(NumerationDocumentEntity)
       .find({
         where: { council: { id: councilId }, state: Not(NumerationState.USED) },
@@ -772,8 +775,8 @@ export class NumerationDocumentService {
       })
 
     if (
-      !availableCounsilNumeration ||
-      availableCounsilNumeration.length === 0
+      !availableCouncilNumeration ||
+      availableCouncilNumeration.length === 0
     ) {
       throw new NumerationNotFound(
         'No hay números disponibles para el consejo y los siguientes se encuentran en uso',
@@ -782,7 +785,7 @@ export class NumerationDocumentService {
 
     return new ApiResponseDto(
       'Numeración disponible encontrada exitosamente',
-      availableCounsilNumeration,
+      availableCouncilNumeration,
     )
   }
 
@@ -961,7 +964,12 @@ export class NumerationDocumentService {
         }
       }
     } catch (error) {
+      console.error(error)
       await queryRunner.rollbackTransaction()
+
+      if (error instanceof NumerationConflict) {
+        throw error
+      }
 
       if (error.status) throw new HttpException(error.message, error.status)
 
