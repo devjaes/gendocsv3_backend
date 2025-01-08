@@ -89,6 +89,14 @@ export class DocumentsService {
       qb.leftJoinAndSelect('numerationDocument.council', 'council')
       qb.leftJoinAndSelect('council.attendance', 'attendance')
       qb.leftJoinAndSelect('attendance.functionary', 'functionary')
+      qb.leftJoinAndSelect(
+        'functionary.thirdLevelDegree',
+        'thirdLevelDegreeFunctionary',
+      )
+      qb.leftJoinAndSelect(
+        'functionary.fourthLevelDegree',
+        'fourthLevelDegreeFunctionary',
+      )
       qb.leftJoinAndSelect('document.user', 'user')
       qb.leftJoinAndSelect('document.student', 'student')
       qb.leftJoinAndSelect('document.templateProcess', 'templateProcess')
@@ -97,6 +105,11 @@ export class DocumentsService {
         'documentFunctionaries',
       )
       qb.leftJoinAndSelect('documentFunctionaries.functionary', 'functionarys')
+      qb.leftJoinAndSelect('functionarys.thirdLevelDegree', 'thirdLevelDegree')
+      qb.leftJoinAndSelect(
+        'functionarys.fourthLevelDegree',
+        'fourthLevelDegree',
+      )
       qb.where('document.id = :id', { id: document.id })
 
       const savedDocument = await qb.getOne()

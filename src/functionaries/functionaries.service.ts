@@ -57,6 +57,10 @@ export class FunctionariesService {
       order: {
         id: 'ASC',
       },
+      relations: {
+        thirdLevelDegree: true,
+        fourthLevelDegree: true,
+      },
       take: limit,
       skip: offset,
     })
@@ -89,6 +93,8 @@ export class FunctionariesService {
 
     const qb = this.functionaryRepository.createQueryBuilder('functionaries')
 
+    qb.leftJoinAndSelect('functionaries.thirdLevelDegree', 'thirdLevelDegree')
+    qb.leftJoinAndSelect('functionaries.fourthLevelDegree', 'fourthLevelDegree')
     qb.where(
       '( (:state :: BOOLEAN) IS NULL OR functionaries.isActive = (:state :: BOOLEAN) )',
       {
