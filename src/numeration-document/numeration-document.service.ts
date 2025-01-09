@@ -985,14 +985,11 @@ export class NumerationDocumentService {
         where: { id: document.numerationDocument.id },
       })
 
-      const documentDeleted = await this.numerationDocumentRepository.update(
-        numeration.id,
-        {
-          state: NumerationState.ENQUEUED,
-        },
-      )
+      numeration.state = NumerationState.ENQUEUED
+      numeration.document = null
+      const numerationChanged = await numeration.save()
 
-      if (!documentDeleted) {
+      if (!numerationChanged) {
         throw new NumerationConflict('Error al eliminar el documento')
       }
 
