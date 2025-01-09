@@ -647,7 +647,9 @@ export class DocumentsService {
     try {
       const document = await this.documentsRepository.findOne({
         where: { id },
-        loadRelationIds: true,
+        relations: {
+          numerationDocument: true,
+        },
       })
 
       if (!document) {

@@ -985,6 +985,11 @@ export class NumerationDocumentService {
         where: { id: document.numerationDocument.id },
       })
 
+      if (!numeration) {
+        throw new NumerationNotFound('Numeración no encontrada')
+      }
+
+      console.log({ number: numeration.number })
       numeration.state = NumerationState.ENQUEUED
       const numerationChanged = await numeration.save()
 
