@@ -986,14 +986,13 @@ export class NumerationDocumentService {
       })
 
       numeration.state = NumerationState.ENQUEUED
-      numeration.document = null
       const numerationChanged = await numeration.save()
 
       if (!numerationChanged) {
-        throw new NumerationConflict('Error al eliminar el documento')
+        throw new NumerationConflict('Error al encolar la numeración')
       }
 
-      return new ApiResponseDto('Documento eliminado exitosamente', {
+      return new ApiResponseDto('Numeración encolada exitosamente', {
         success: true,
       })
     } catch (error) {
