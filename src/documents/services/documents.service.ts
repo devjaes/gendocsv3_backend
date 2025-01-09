@@ -658,11 +658,13 @@ export class DocumentsService {
         document,
       )
 
-      if (!confirmation) {
+      if (!confirmation.data) {
         throw new ConflictException('Numeración no actualizada')
       }
 
-      await this.filesService.remove(document.driveId)
+      if (document.driveId) {
+        await this.filesService.remove(document.driveId)
+      }
 
       const isDeleted = await this.documentsRepository.delete(document.id)
 

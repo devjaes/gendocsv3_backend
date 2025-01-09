@@ -701,7 +701,7 @@ export class VariablesService {
 
   async getFunctionaryVariables(
     documentFunctionaries: DocumentFunctionaryEntity[],
-    council: CouncilEntity,
+    _council: CouncilEntity,
   ) {
     try {
       const variables = {}
@@ -712,9 +712,9 @@ export class VariablesService {
         variables[
           DEFAULT_VARIABLE.DOCENTE_N_SIN_TITU.replace('$i', index.toString())
         ] = getFullName(documentFunctionary.functionary)
-        variables[
-          DEFAULT_VARIABLE.DOCENTE_CARGO_N.replace('$i', index.toString())
-        ] = this.getCouncilMemberPositionVariable(documentFunctionary, council)
+        // variables[
+        //   DEFAULT_VARIABLE.DOCENTE_CARGO_N.replace('$i', index.toString())
+        // ] = this.getCouncilMemberPositionVariable(documentFunctionary, council)
       })
 
       return new ApiResponseDto(
