@@ -133,10 +133,11 @@ export class DocumentsService {
 
       if (createDocumentDto.functionariesIds) {
         documentFunctionaries = createDocumentDto.functionariesIds.map(
-          (functionaryId) =>
+          (functionaryId, index) =>
             this.documentFunctionaryRepository.create({
               document: { id: savedDocument.id },
               functionary: { id: functionaryId },
+              order: index,
             }),
         )
 
@@ -147,6 +148,7 @@ export class DocumentsService {
         const documentFunctionariesSaved =
           await this.documentFunctionaryRepository.find({
             where: { document: { id: savedDocument.id } },
+            order: { order: 'ASC' },
             relationLoadStrategy: 'join',
             relations: {
               functionary: true,

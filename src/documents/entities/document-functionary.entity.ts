@@ -19,6 +19,13 @@ export class DocumentFunctionaryEntity extends BaseAppEntity {
   @JoinColumn({ name: 'document_id' })
   document: DocumentEntity
 
+  @Column({
+    name: 'order',
+    type: 'int',
+    nullable: true,
+  })
+  order: number
+
   @ApiProperty({
     example: '1',
     description: 'Id del funcionario',
