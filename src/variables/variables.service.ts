@@ -707,10 +707,17 @@ export class VariablesService {
       const variables = {}
       documentFunctionaries.forEach((documentFunctionary, index) => {
         // eslint-disable-next-line no-extra-parens
-        variables[DEFAULT_VARIABLE.DOCENTE_N.replace('$i', index.toString())] =
-          getFullNameWithTitles(documentFunctionary.functionary)
         variables[
-          DEFAULT_VARIABLE.DOCENTE_N_SIN_TITU.replace('$i', index.toString())
+          DEFAULT_VARIABLE.DOCENTE_N.replace(
+            '$i',
+            documentFunctionary.order?.toString() ?? index.toString(),
+          )
+        ] = getFullNameWithTitles(documentFunctionary.functionary)
+        variables[
+          DEFAULT_VARIABLE.DOCENTE_N_SIN_TITU.replace(
+            '$i',
+            documentFunctionary.order?.toString() ?? index.toString(),
+          )
         ] = getFullName(documentFunctionary.functionary)
         // variables[
         //   DEFAULT_VARIABLE.DOCENTE_CARGO_N.replace('$i', index.toString())
