@@ -90,8 +90,9 @@ export class CreateFunctionaryDto {
   @ApiProperty({
     description: 'Cuarto nivel de educación',
   })
+  @IsOptional()
   @IsNumber()
-  fourthLevelDegree: number
+  fourthLevelDegree?: number
 
   @ApiProperty({
     description: 'Género del funcionario',

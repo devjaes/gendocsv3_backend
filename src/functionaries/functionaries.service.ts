@@ -35,7 +35,10 @@ export class FunctionariesService {
     const functionary = this.functionaryRepository.create({
       ...createFunctionaryDto,
       thirdLevelDegree: { id: createFunctionaryDto.thirdLevelDegree },
-      fourthLevelDegree: { id: createFunctionaryDto.fourthLevelDegree },
+      fourthLevelDegree:
+        createFunctionaryDto.fourthLevelDegree != null
+          ? { id: createFunctionaryDto.fourthLevelDegree }
+          : undefined,
     })
 
     if (!functionary) {

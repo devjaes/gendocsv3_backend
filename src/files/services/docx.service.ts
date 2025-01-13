@@ -145,7 +145,30 @@ export class DocxService {
     } catch (error) {
       throw error
     } finally {
-      await fs.rm(tempDir, { recursive: true, force: true }) // Clean up the temporary directory
+      await DocxService.cleanDirectory(tempDir)
+    }
+  }
+
+  static async cleanDirectory(directory: string) {
+    try {
+      // Verifica si el directorio existe
+      await fs.access(directory)
+
+      // Si existe, lista los archivos y elimínalos
+      const files = await fs.readdir(directory)
+      for (const file of files) {
+        await fs.rm(path.join(directory, file), {
+          recursive: true,
+          force: true,
+        })
+      }
+    } catch (error) {
+      if (error.code === 'ENOENT') {
+        console.warn(`El directorio ${directory} no existe. Nada que limpiar.`)
+      } else {
+        console.error(`Error al limpiar el directorio ${directory}:`, error)
+        throw error
+      }
     }
   }
 
