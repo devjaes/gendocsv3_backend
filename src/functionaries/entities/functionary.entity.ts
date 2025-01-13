@@ -42,7 +42,7 @@ export class FunctionaryEntity extends BasePerson {
     description: 'Cuarto nivel de educación',
   })
   @ManyToOne(() => DegreeEntity, {
-    nullable: false,
+    nullable: true,
     eager: true,
   })
   @JoinColumn({

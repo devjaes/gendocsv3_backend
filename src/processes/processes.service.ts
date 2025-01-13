@@ -105,11 +105,12 @@ export class ProcessesService {
       .leftJoinAndSelect('processes.module', 'module')
       .leftJoinAndSelect('processes.submodule', 'submodule')
       .leftJoinAndSelect('processes.templateProcesses', 'templates')
+      .orderBy('processes.name', 'ASC')
   }
 
   async findAll() {
     try {
-      const qb = this.getBaseQuery().orderBy('processes.createdAt', 'DESC')
+      const qb = this.getBaseQuery().orderBy('processes.name', 'ASC')
 
       const processes = await qb.getMany()
 
@@ -130,7 +131,7 @@ export class ProcessesService {
     const { moduleId, limit, page } = paginationDto
     const offset = (page - 1) * limit
 
-    const qb = this.getBaseQuery().orderBy('processes.createdAt', 'DESC')
+    const qb = this.getBaseQuery().orderBy('processes.name', 'ASC')
 
     if (moduleId != null) {
       qb.where('module.id = :moduleId', { moduleId })
@@ -206,7 +207,7 @@ export class ProcessesService {
     const count = await qb.getCount()
 
     const processes = await qb
-      .orderBy('processes.createdAt', 'DESC')
+      .orderBy('processes.name', 'ASC')
       .take(limit)
       .skip(offset)
       .getMany()

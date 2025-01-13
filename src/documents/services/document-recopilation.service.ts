@@ -234,6 +234,8 @@ export class DocumentRecopilationService {
       .leftJoinAndSelect('submoduleYearModule.yearModule', 'yearModule')
       .leftJoinAndSelect('council.attendance', 'attendance')
       .leftJoinAndSelect('attendance.functionary', 'functionary')
+      .leftJoinAndSelect('functionary.thirdLevelDegree', 'thirdLevelDegree')
+      .leftJoinAndSelect('functionary.fourthLevelDegree', 'fourthLevelDegree')
       .where('council.id = :councilId', { councilId })
       .getOne()
 
