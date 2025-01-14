@@ -40,7 +40,7 @@ export class DocxService {
     } catch (error) {
       throw error
     } finally {
-      await fs.rm(tempDir, { recursive: true, force: true })
+      await DocxService.cleanDirectory(tempDir)
     }
   }
 
