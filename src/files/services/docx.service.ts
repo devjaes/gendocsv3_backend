@@ -26,12 +26,14 @@ export class DocxService {
       console.log(`Extracted contents to ${tempDir}`)
 
       const documentXmlPath = path.join(tempDir, this.DOC_ZIP_PATH)
-      console.log(' files on tempDir', fsS.readdirSync(tempDir + '/word'))
+      console.log(' files on tempDir', fsS.readdirSync(`${tempDir}/word`))
       const documentXml = await fs.readFile(documentXmlPath, 'utf8')
 
       console.log(`Read document.xml content`)
 
       const doc = new DOMParser().parseFromString(documentXml)
+
+      console.log(`Parsed document.xml content`)
 
       const body = doc.getElementsByTagName('w:body')[0]
       if (!body) {
@@ -40,22 +42,24 @@ export class DocxService {
         )
       }
 
-      if (!body) {
-        throw new Error('Body not found in the document')
-      }
+      console.log('Filtering document content')
 
       this.removeContentUntil(body, start, false)
+      console.log('Removed content until start marker')
       this.removeContentUntil(body, end, true)
+      console.log('Removed content after end marker')
 
       await fs.writeFile(documentXmlPath, doc.toString())
+      console.log('Updated document.xml content')
 
       await this.rezipContents(tempDir, filePath)
+      console.log('Rezipped contents')
       return filePath
     } catch (error) {
       console.error('Error filtering docx:', error)
       throw error
     } finally {
-      await DocxService.cleanDirectory(tempDir)
+      // await DocxService.cleanDirectory(tempDir)
     }
   }
 
