@@ -49,6 +49,21 @@ export class DocxService {
       this.removeContentUntil(body, end, true)
       console.log('Removed content after end marker')
 
+      // creando el directorio word
+      const resolvedXmlDocPath = await DocxService.resolveDirectory(
+        `${tempDir}/word`,
+      )
+
+      // creando el archivo si no existe
+      const createdFileIfItDoesntExist = fsS.createWriteStream(
+        `${resolvedXmlDocPath}/document.xml`,
+        { flags: 'w' },
+      )
+      // cerrando el archivo
+      createdFileIfItDoesntExist.close()
+      console.log('Created document.xml file')
+
+      // escribiendo el contenido en el archivo
       await fs.writeFile(documentXmlPath, doc.toString())
       console.log('Updated document.xml content')
 
