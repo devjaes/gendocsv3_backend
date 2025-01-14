@@ -159,10 +159,11 @@ export class DocxService {
   async replaceTextOnDocument(
     replaceEntries: IReplaceText,
     separatorPath: string,
+    keyFolder = 'zdoc',
   ): Promise<string> {
     const tempDir = await DocxService.resolveDirectory(
       // eslint-disable-next-line no-extra-parens
-      `${getProjectPath()}/storage/temp` + `sep-docx-`,
+      `${getProjectPath()}/storage/temp/${keyFolder}` + `sep-docx-`,
     )
     try {
       const zip = new AdmZip(await fs.readFile(separatorPath))

@@ -169,6 +169,7 @@ export class DocumentRecopilationService {
 
     const replacedSeparator =
       await this.filesService.copyAndReplaceTextOnLocalDocument(
+        document.id,
         `${document.numerationDocument.number.toString()}-separator.docx`,
         replaceEntries,
         separatorPath,
@@ -251,21 +252,22 @@ export class DocumentRecopilationService {
       throw new NotFoundException('Consejo no encontrado')
     }
 
-    const councilWithRecopilation = await this.dataSource.manager
+    const councils = await this.dataSource.manager
       .getRepository(CouncilEntity)
       .findAndCount({
         where: {
-          recopilationDriveId: null,
           submoduleYearModule: {
             id: council.submoduleYearModule.id,
           },
         },
+        order: {
+          date: 'ASC',
+        },
       })
 
-    const recopilationNumber = councilWithRecopilation[1]
-      ? councilWithRecopilation[1] + 1
-      : 1
+    const councilIndex = councils[0].findIndex((c) => c.id === councilId)
 
+    const recopilationNumber = councilIndex + 1
     const docCouncil = await this.filesService.createDocumentByParentIdAndCopy(
       // eslint-disable-next-line no-magic-numbers
       `ACTA ${formatNumeration(recopilationNumber, 3)}/${

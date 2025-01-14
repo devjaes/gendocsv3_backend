@@ -189,6 +189,7 @@ export class FilesService {
   }
 
   async copyAndReplaceTextOnLocalDocument(
+    documentId: number,
     title: string,
     replaceEntries: IReplaceText,
     filePath: string,
@@ -203,6 +204,7 @@ export class FilesService {
     const replacedSeparatorPath = await this.docxService.replaceTextOnDocument(
       replaceEntries,
       savedDocumentPath,
+      documentId.toString(),
     )
 
     if (!replacedSeparatorPath) {
