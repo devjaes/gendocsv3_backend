@@ -18,13 +18,25 @@ export class DocxService {
     const tempPath = `${getProjectPath()}/storage/temp`
     const tempDir = await DocxService.resolveDirectory(`${tempPath}/docx-/`)
     try {
+      console.log(`Processing file: ${filePath}`)
+
       const zip = new AdmZip(filePath)
       zip.extractAllTo(tempDir, true)
+      console.log(`Extracted contents to ${tempDir}`)
+
       const documentXmlPath = path.join(tempDir, this.DOC_ZIP_PATH)
       const documentXml = await fs.readFile(documentXmlPath, 'utf8')
+
+      console.log(`Read document.xml content`)
+
       const doc = new DOMParser().parseFromString(documentXml)
 
       const body = doc.getElementsByTagName('w:body')[0]
+      if (!body) {
+        throw new Error(
+          'The document.xml file does not contain a <w:body> element.',
+        )
+      }
 
       if (!body) {
         throw new Error('Body not found in the document')
@@ -38,6 +50,7 @@ export class DocxService {
       await this.rezipContents(tempDir, filePath)
       return filePath
     } catch (error) {
+      console.error('Error filtering docx:', error)
       throw error
     } finally {
       await DocxService.cleanDirectory(tempDir)
@@ -57,8 +70,13 @@ export class DocxService {
       if (p.textContent.includes(marker)) {
         body.removeChild(p)
         found = true
-      } else if (!found) {
-        body.removeChild(p)
+      }
+      if (!found) {
+        try {
+          body.removeChild(p)
+        } catch (err) {
+          console.error(`Failed to remove a node: ${err.message}`)
+        }
       }
     })
   }
@@ -153,18 +171,16 @@ export class DocxService {
   static async cleanDirectory(directory: string) {
     try {
       // Verifica si el directorio existe
-      await fs.access(directory)
+      // await fs.access(directory)
 
       // Si existe, lista los archivos y elimínalos
       const files = await fs.readdir(directory)
       console.log('Archivos en el directorio antes de limpiar:', files)
 
-      for (const file of files) {
-        await fs.rm(path.join(directory, file), {
-          recursive: true,
-          force: true,
-        })
-      }
+      await Promise.all(
+        files.map((file) => fs.unlink(path.join(directory, file))),
+      )
+      await fs.rmdir(directory, { recursive: true })
     } catch (error) {
       if (error.code === 'ENOENT') {
         console.warn(`El directorio ${directory} no existe. Nada que limpiar.`)
