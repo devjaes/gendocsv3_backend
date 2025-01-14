@@ -71,7 +71,8 @@ export class DocxService {
     zip.addLocalFolder(tempDir)
     await fs.writeFile(filePath, zip.toBuffer())
 
-    await fs.rm(tempDir, { recursive: true, force: true }) // Clean up the temporary directory
+    // await fs.rm(tempDir, { recursive: true, force: true }) // Clean up the temporary directory
+    await DocxService.cleanDirectory(tempDir)
   }
 
   async mergeDocuments(
