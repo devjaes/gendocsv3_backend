@@ -366,4 +366,8 @@ export class FilesService {
 
     return reportPath
   }
+
+  async cleanDirectory(directory: string) {
+    return await DocxService.cleanDirectory(directory)
+  }
 }

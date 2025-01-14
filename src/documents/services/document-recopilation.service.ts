@@ -219,6 +219,9 @@ export class DocumentRecopilationService {
         },
       })
 
+    // remove temp docx path files
+    await this.filesService.cleanDirectory(tempDocxPath)
+
     return new ApiResponseDto('Documentos del consejo procesados', {
       mergedDocumentPath,
       council: councilWithRecopilation,
