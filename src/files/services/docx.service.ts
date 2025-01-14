@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common'
 import AdmZip from 'adm-zip'
 import * as fs from 'fs/promises'
 import * as path from 'path'
+import * as fsS from 'fs'
 import { DOMParser } from 'xmldom'
 import { IReplaceText } from '../../shared/interfaces/replace-text'
 import { getProjectPath } from '../../shared/helpers/path-helper'
@@ -172,15 +173,28 @@ export class DocxService {
     try {
       // Verifica si el directorio existe
       // await fs.access(directory)
+      // // Si existe, lista los archivos y elimínalos
+      // const files = await fs.readdir(directory)
+      // console.log('Archivos en el directorio antes de limpiar:', files)
+      // await Promise.all(
+      //   files.map((file) => fs.unlink(path.join(directory, file))),
+      // )
+      // await fs.rmdir(directory, { recursive: true })
 
-      // Si existe, lista los archivos y elimínalos
-      const files = await fs.readdir(directory)
-      console.log('Archivos en el directorio antes de limpiar:', files)
-
-      await Promise.all(
-        files.map((file) => fs.unlink(path.join(directory, file))),
-      )
-      await fs.rmdir(directory, { recursive: true })
+      if (fsS.existsSync(directory)) {
+        fsS.readdirSync(directory).forEach((file) => {
+          const filePath = path.join(directory, file)
+          if (fsS.lstatSync(filePath).isDirectory()) {
+            // Si es un directorio, llamamos a la función de forma recursiva
+            DocxService.cleanDirectory(filePath)
+          } else {
+            // Si es un archivo, lo eliminamos
+            fsS.unlinkSync(filePath)
+          }
+        })
+        // Eliminamos el directorio después de vaciarlo
+        fsS.rmdirSync(directory)
+      }
     } catch (error) {
       if (error.code === 'ENOENT') {
         console.warn(`El directorio ${directory} no existe. Nada que limpiar.`)
