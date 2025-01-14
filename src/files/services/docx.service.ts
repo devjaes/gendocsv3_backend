@@ -26,6 +26,7 @@ export class DocxService {
       console.log(`Extracted contents to ${tempDir}`)
 
       const documentXmlPath = path.join(tempDir, this.DOC_ZIP_PATH)
+      console.log(' files on tempDir', fsS.readdirSync(tempDir + '/word'))
       const documentXml = await fs.readFile(documentXmlPath, 'utf8')
 
       console.log(`Read document.xml content`)
