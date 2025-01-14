@@ -279,11 +279,13 @@ export class FilesService {
     return savedDocument
   }
   async filterDocument(
+    documentId: number,
     savedDownloadedDocumentPath: string,
     FROM: DEFAULT_VARIABLE,
     TO: DEFAULT_VARIABLE,
   ) {
     const filteredDocumentPath = await this.docxService.filterDocx(
+      documentId,
       savedDownloadedDocumentPath,
       FROM,
       TO,

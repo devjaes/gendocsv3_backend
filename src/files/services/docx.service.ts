@@ -12,12 +12,15 @@ export class DocxService {
   private DOC_ZIP_PATH = 'word/document.xml'
 
   async filterDocx(
+    documentId: number,
     filePath: string,
     start: string,
     end: string,
   ): Promise<string> {
     const tempPath = `${getProjectPath()}/storage/temp`
-    const tempDir = await DocxService.resolveDirectory(`${tempPath}/docx-/`)
+    const tempDir = await DocxService.resolveDirectory(
+      `${tempPath}/zdocs/${documentId}/docx-/`,
+    )
     try {
       console.log(`Processing file: ${filePath}`)
 
@@ -111,7 +114,7 @@ export class DocxService {
     await fs.writeFile(filePath, zip.toBuffer())
 
     // await fs.rm(tempDir, { recursive: true, force: true }) // Clean up the temporary directory
-    await DocxService.cleanDirectory(tempDir)
+    // await DocxService.cleanDirectory(tempDir)
   }
 
   async mergeDocuments(

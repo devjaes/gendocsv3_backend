@@ -11,6 +11,7 @@ import { DocumentEntity } from '../entities/document.entity'
 import { ApiResponseDto } from '../../shared/dtos/api-response.dto'
 import {
   getCouncilPath,
+  getProjectPath,
   getYearModulePath,
 } from '../../shared/helpers/path-helper'
 import { MIMETYPES } from '../../shared/constants/mime-types'
@@ -111,6 +112,9 @@ export class DocumentRecopilationService {
     console.log(preparedDocuments)
 
     const mergedDocument = await this.mergeDocuments(council.id, council)
+    // clean temp docx path files
+    const tempPath = `${getProjectPath()}/storage/temp/zdocs`
+    await this.filesService.cleanDirectory(tempPath)
 
     return new ApiResponseDto('Recopilación de documentos creada', {
       documentsRecopilated: resolvedDocuments.length,
@@ -143,6 +147,7 @@ export class DocumentRecopilationService {
       )
 
     const filteredDocumentPath = await this.filesService.filterDocument(
+      document.id,
       savedDownloadedDocumentPath,
       DEFAULT_VARIABLE.FROM,
       DEFAULT_VARIABLE.TO,
