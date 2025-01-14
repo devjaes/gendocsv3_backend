@@ -157,6 +157,8 @@ export class DocxService {
 
       // Si existe, lista los archivos y elimínalos
       const files = await fs.readdir(directory)
+      console.log('Archivos en el directorio antes de limpiar:', files)
+
       for (const file of files) {
         await fs.rm(path.join(directory, file), {
           recursive: true,
@@ -166,6 +168,10 @@ export class DocxService {
     } catch (error) {
       if (error.code === 'ENOENT') {
         console.warn(`El directorio ${directory} no existe. Nada que limpiar.`)
+      } else if (error.code === 'ENOTEMPTY') {
+        console.warn(
+          `El directorio ${directory} no está vacío. No se limpiará.`,
+        )
       } else {
         console.error(`Error al limpiar el directorio ${directory}:`, error)
         throw error
