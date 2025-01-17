@@ -26,6 +26,12 @@ services:
       - postgres
     networks:
       - gendocs-network
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+        reservations:
+          memory: 2G 
 
   frontend:
     container_name: gendocsv3_frontend
