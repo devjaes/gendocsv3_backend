@@ -30,6 +30,7 @@ import { NotificationsGateway } from '../../notifications/notifications.gateway'
 import { DocumentFiltersDto } from '../dto/document-filters.dto'
 import { EmailService } from '../../email/services/email.service'
 import { getWhatsAppLink } from '../../shared/utils/link'
+import { performance, PerformanceObserver } from 'perf_hooks'
 
 @Injectable()
 export class DocumentsService {
@@ -57,20 +58,38 @@ export class DocumentsService {
     let driveId = undefined
     let document = undefined
     let documentFunctionaries
+    // Configurar el observer para recolectar las mediciones
+    const obs = new PerformanceObserver((list) => {
+      const entries = list.getEntries()
+      entries.forEach((entry) => {
+        console.log(`${entry.name}: ${entry.duration}ms`)
+      })
+    })
+    obs.observe({ entryTypes: ['measure'] })
 
+    performance.mark('Inicio de creación de documento')
+    performance.mark('numeration-start')
     const { data: numeration } = await this.numerationDocumentService.create({
       number: createDocumentDto.number,
       councilId: createDocumentDto.councilId,
     })
+    performance.mark('numeration-end')
 
     if (!numeration) {
       throw new ConflictException('Numeración no creada')
     }
 
+    performance.measure(
+      'Creación de numeración',
+      'numeration-start',
+      'numeration-end',
+    )
+
     try {
       let functionariesData = undefined
       let studentData = undefined
 
+      performance.mark('document-start')
       document = this.documentsRepository.create({
         ...createDocumentDto,
         numerationDocument: { id: numeration.id },
@@ -83,7 +102,15 @@ export class DocumentsService {
         throw new Error('Error al crear el documento')
       }
       await this.documentsRepository.save(document)
+      performance.mark('document-end')
 
+      performance.measure(
+        'Creación de documento',
+        'document-start',
+        'document-end',
+      )
+
+      performance.mark('document-query-start')
       const qb = this.documentsRepository.createQueryBuilder('document')
       qb.leftJoinAndSelect('document.numerationDocument', 'numerationDocument')
       qb.leftJoinAndSelect('numerationDocument.council', 'council')
@@ -114,22 +141,19 @@ export class DocumentsService {
 
       const savedDocument = await qb.getOne()
 
+      performance.mark('document-query-end')
+      performance.measure(
+        'Consulta de documento',
+        'document-query-start',
+        'document-query-end',
+      )
+
       if (!savedDocument) {
         await this.numerationDocumentService.remove(numeration.id)
         throw new Error('Error al crear el documento')
       }
 
-      const generalData = await this.variableService.getGeneralVariables(
-        savedDocument,
-      )
-
-      const councilData = await this.variableService.getCouncilVariables(
-        savedDocument,
-      )
-
-      const positionsData = await this.variableService.getPositionVariables()
-      const customVariablesData =
-        await this.variableService.getCustomVariables()
+      performance.mark('variables-start')
 
       if (createDocumentDto.functionariesIds) {
         documentFunctionaries = createDocumentDto.functionariesIds.map(
@@ -164,7 +188,7 @@ export class DocumentsService {
             },
           })
 
-        functionariesData = await this.variableService.getFunctionaryVariables(
+        functionariesData = this.variableService.getFunctionaryVariables(
           documentFunctionariesSaved,
           savedDocument.numerationDocument.council,
         )
@@ -196,6 +220,15 @@ export class DocumentsService {
         studentData = this.variableService.getStudentVariables(savedDocument)
       }
 
+      await Promise.all([functionariesData, studentData])
+      const [generalData, councilData, positionsData, customVariablesData] =
+        await Promise.all([
+          this.variableService.getGeneralVariables(savedDocument),
+          this.variableService.getCouncilVariables(savedDocument),
+          this.variableService.getPositionVariables(),
+          this.variableService.getCustomVariables(),
+        ])
+
       const variables = {
         [DEFAULT_VARIABLE.PREFEX_GENERAL]: generalData.data,
         [DEFAULT_VARIABLE.PREFIX_CONSEJO]: councilData.data,
@@ -213,7 +246,14 @@ export class DocumentsService {
 
       // eslint-disable-next-line require-atomic-updates
       savedDocument.variables = JSON.parse(variablesJson)
+      performance.mark('variables-end')
+      performance.measure(
+        'Creación de variables',
+        'variables-start',
+        'variables-end',
+      )
 
+      performance.mark('create-document-drive-start')
       driveId = (
         await this.filesService.createDocumentByParentIdAndCopy(
           formatNumeration(numeration.number),
@@ -221,6 +261,12 @@ export class DocumentsService {
           savedDocument.templateProcess.driveId,
         )
       ).data
+      performance.mark('create-document-drive-end')
+      performance.measure(
+        'Creación de documento en drive',
+        'create-document-drive-start',
+        'create-document-drive-end',
+      )
 
       const formatVariables = {
         ...generalData.data,
@@ -233,13 +279,35 @@ export class DocumentsService {
         ...customVariablesData.data,
       }
 
-      await this.filesService.replaceTextOnDocument(formatVariables, driveId)
+      performance.mark('replace-text-start')
+      this.filesService.replaceTextOnDocument(formatVariables, driveId)
+      performance.mark('replace-text-end')
 
+      performance.measure(
+        'Reemplazo de texto en documento',
+        'replace-text-start',
+        'replace-text-end',
+      )
+
+      performance.mark('save-document-start')
       const finalDocument = await this.documentsRepository.save({
         id: savedDocument.id,
         driveId,
         variables: JSON.stringify(formatVariables),
       })
+      performance.mark('save-document-end')
+      performance.measure(
+        'Guardado de documento',
+        'save-document-start',
+        'save-document-end',
+      )
+
+      performance.mark('fin de creación de documento')
+      performance.measure(
+        'Creación de documento',
+        'Inicio de creación de documento',
+        'fin de creación de documento',
+      )
 
       return new ApiResponseDto('Documento creado', finalDocument)
     } catch (error) {
