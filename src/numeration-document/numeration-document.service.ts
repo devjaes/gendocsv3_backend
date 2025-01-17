@@ -18,6 +18,7 @@ import { NumerationBadRequest } from './errors/numeration-bad-request'
 import { ReserveNumerationDocumentDto } from './dto/reserve-numeration.dto'
 import { NumerationNotFound } from './errors/numeration-not-found'
 import { YearModuleService } from '../year-module/services/year-module.service'
+import { performance } from 'perf_hooks'
 
 @Injectable()
 export class NumerationDocumentService {
@@ -32,10 +33,13 @@ export class NumerationDocumentService {
   ) {}
 
   async verifyCouncilExists(councilId: number) {
-    const council = await this.dataSource.manager.findOne(CouncilEntity, {
-      where: { id: councilId },
-    })
+    const qb = this.dataSource.manager
+      .createQueryBuilder(CouncilEntity, 'council')
+      .leftJoinAndSelect('council.module', 'module')
+      .leftJoinAndSelect('council.attendance', 'attendance')
+      .where('council.id = :councilId', { councilId })
 
+    const council = await qb.getOne()
     if (!council) throw new NumerationBadRequest('Council not found')
     return new ApiResponseDto('Consejo encontrado exitosamente', council)
   }
@@ -74,9 +78,15 @@ export class NumerationDocumentService {
 
   async getNextNumberToRegister(moduleId: number) {
     const systemYear = await this.yearModuleService.getCurrentSystemYear()
-    const yearModule = await this.dataSource.manager.findOne(YearModuleEntity, {
-      where: { module: { id: moduleId }, year: systemYear },
-    })
+    const qb = this.dataSource.manager.createQueryBuilder(
+      YearModuleEntity,
+      'yearModule',
+    )
+    qb.leftJoinAndSelect('yearModule.module', 'module')
+    qb.where('module.id = :moduleId', { moduleId })
+    qb.andWhere('yearModule.year = :year', { year: systemYear })
+
+    const yearModule = await qb.getOne()
 
     if (!yearModule) {
       throw new NumerationBadRequest('YearModule not found')
@@ -156,10 +166,17 @@ export class NumerationDocumentService {
   }
 
   async getCouncilsCouldReserveNumeration(moduleId: number) {
-    const yearModule = await this.dataSource.manager.findOne(YearModuleEntity, {
-      where: { module: { id: moduleId } },
-    })
+    const systemYear = await this.yearModuleService.getCurrentSystemYear()
 
+    const qb = this.dataSource.manager.createQueryBuilder(
+      YearModuleEntity,
+      'yearModule',
+    )
+    qb.leftJoinAndSelect('yearModule.module', 'module')
+    qb.where('module.id = :moduleId', { moduleId })
+    qb.andWhere('yearModule.year = :year', { year: systemYear })
+
+    const yearModule = await qb.getOne()
     if (!yearModule) {
       throw new NumerationBadRequest('Módulo del año no encontrado')
     }
@@ -463,9 +480,11 @@ export class NumerationDocumentService {
       )
     }
 
-    const council = await this.dataSource.manager.findOne(CouncilEntity, {
-      where: { id: councilId },
-    })
+    const council = await this.dataSource.manager
+      .createQueryBuilder(CouncilEntity, 'council')
+      .leftJoinAndSelect('council.module', 'module')
+      .where('council.id = :councilId', { councilId })
+      .getOne()
 
     if (!council) {
       throw new NumerationNotFound('Consejo no encontrado')
@@ -768,11 +787,15 @@ export class NumerationDocumentService {
 
   async getAvailableCouncilNumeration(councilId: number) {
     const availableCouncilNumeration = await this.dataSource.manager
-      .getRepository(NumerationDocumentEntity)
-      .find({
-        where: { council: { id: councilId }, state: Not(NumerationState.USED) },
-        order: { number: 'ASC' },
+      .createQueryBuilder(NumerationDocumentEntity, 'numerationDocument')
+      .leftJoinAndSelect('numerationDocument.council', 'council')
+      .leftJoinAndSelect('numerationDocument.yearModule', 'yearModule')
+      .where('numerationDocument.council.id = :councilId', { councilId })
+      .andWhere('numerationDocument.state != :state', {
+        state: NumerationState.USED,
       })
+      .orderBy('numerationDocument.number', 'ASC')
+      .getMany()
 
     if (
       !availableCouncilNumeration ||
@@ -790,20 +813,48 @@ export class NumerationDocumentService {
   }
 
   async create(createNumerationDocumentDto: CreateNumerationDocumentDto) {
+    // Configurar el observer para recolectar las mediciones
+    const obs = new PerformanceObserver((list) => {
+      const entries = list.getEntries()
+      entries.forEach((entry) => {
+        console.log(`${entry.name}: ${entry.duration}ms`)
+      })
+    })
+    obs.observe({ entryTypes: ['measure'] })
+
+    performance.mark('start')
+
     if (createNumerationDocumentDto.number <= 0) {
       throw new NumerationBadRequest(
         'El número debe ser mayor a 0, posiblemente no existe numeración disponible para el consejo',
       )
     }
 
+    performance.mark('validateCouncilExists')
     const { data: council } = await this.verifyCouncilExists(
       createNumerationDocumentDto.councilId,
     )
+    performance.mark('validateCouncilExistsEnd')
+    performance.measure(
+      'validateCouncilExists',
+      'validateCouncilExists',
+      'validateCouncilExistsEnd',
+    )
 
+    performance.mark('getYearModule')
     const { data: yearModule } = await this.getYearModule(council)
+    performance.mark('getYearModuleEnd')
+    performance.measure('getYearModule', 'getYearModule', 'getYearModuleEnd')
 
+    performance.mark('getLastRegisterNumeration')
     const lastNumeration = await this.getLastRegisterNumeration(
       yearModule.module.id,
+    )
+    performance.mark('getLastRegisterNumerationEnd')
+    performance.measure(
+      'getLastRegisterNumeration',
+      'getLastRegisterNumeration',
+      'getLastRegisterNumerationEnd',
     )
 
     if (
@@ -813,45 +864,96 @@ export class NumerationDocumentService {
       throw new NumerationConflict('El número ya está en uso')
     }
 
-    const queryRunner = this.dataSource.createQueryRunner()
-    await queryRunner.startTransaction()
-
     try {
+      performance.mark('validateCouncilPresident')
       await this.validateCouncilPresident(council)
+      performance.mark('validateCouncilPresidentEnd')
+      performance.measure(
+        'validateCouncilPresident',
+        'validateCouncilPresident',
+        'validateCouncilPresidentEnd',
+      )
 
-      const numerationsByYearModule = await this.dataSource.manager.find(
-        NumerationDocumentEntity,
-        {
-          where: { yearModule: { id: yearModule.id } },
-          order: { number: 'DESC' },
-        },
+      performance.mark('getNextNumberToRegister')
+      const nexNumberToRegister = await this.getNextNumberToRegister(
+        yearModule.module.id,
+      )
+      performance.mark('getNextNumberToRegisterEnd')
+      performance.measure(
+        'getNextNumberToRegister',
+        'getNextNumberToRegister',
+        'getNextNumberToRegisterEnd',
+      )
+
+      if (createNumerationDocumentDto.number === nexNumberToRegister) {
+        performance.mark('createLastNumeration')
+        const numeration = await this.createLastNumeration(
+          createNumerationDocumentDto.number,
+          createNumerationDocumentDto.councilId,
+          yearModule.id,
+        )
+        performance.mark('createLastNumerationEnd')
+        performance.measure(
+          'createLastNumeration',
+          'createLastNumeration',
+          'createLastNumerationEnd',
+        )
+
+        return numeration
+      }
+
+      performance.mark('numerationsByYearModule')
+      const numerationsByYearModule = await this.dataSource.manager
+        .createQueryBuilder(NumerationDocumentEntity, 'numerationDocument')
+        .leftJoinAndSelect('numerationDocument.council', 'council')
+        .leftJoinAndSelect('numerationDocument.yearModule', 'yearModule')
+        .where('yearModule.id = :yearModuleId', { yearModuleId: yearModule.id })
+        .orderBy('numerationDocument.number', 'DESC')
+        .getMany()
+      performance.mark('numerationsByYearModuleEnd')
+      performance.measure(
+        'numerationsByYearModule',
+        'numerationsByYearModule',
+        'numerationsByYearModuleEnd',
       )
 
       if (!numerationsByYearModule || numerationsByYearModule.length === 0) {
         if (createNumerationDocumentDto.number > 1) {
+          performance.mark('reserveNumerationRange')
           await this.reserveNumerationRange(
             1,
             createNumerationDocumentDto.number - 1,
             createNumerationDocumentDto.councilId,
             yearModule.id,
           )
+          performance.mark('reserveNumerationRangeEnd')
+          performance.measure(
+            'reserveNumerationRange',
+            'reserveNumerationRange',
+            'reserveNumerationRangeEnd',
+          )
         }
 
+        performance.mark('createLastNumeration')
         const numeration = await this.createLastNumeration(
           createNumerationDocumentDto.number,
           createNumerationDocumentDto.councilId,
           yearModule.id,
         )
+        performance.mark('createLastNumerationEnd')
 
         return numeration
       } else {
-        const numerationsByCouncil = await this.dataSource.manager.find(
-          NumerationDocumentEntity,
-          {
-            where: { council: { id: createNumerationDocumentDto.councilId } },
-            order: { number: 'DESC' },
-          },
-        )
+        performance.mark('numerationsByCouncil')
+        const numerationsByCouncil = await this.dataSource.manager
+          .createQueryBuilder(NumerationDocumentEntity, 'numerationDocument')
+          .leftJoinAndSelect('numerationDocument.council', 'council')
+          .where('council.id = :councilId', {
+            councilId: createNumerationDocumentDto.councilId,
+          })
+          .orderBy('numerationDocument.number', 'DESC')
+          .getMany()
+        performance.mark('numerationsByCouncilEnd')
 
         if (!numerationsByCouncil || numerationsByCouncil.length === 0) {
           if (
@@ -867,26 +969,47 @@ export class NumerationDocumentService {
             createNumerationDocumentDto.number >
             numerationsByYearModule[0].number + 1
           ) {
+            performance.mark('reserveNumerationRange')
             await this.reserveNumerationRange(
               numerationsByYearModule[0].number + 1,
               createNumerationDocumentDto.number - 1,
               createNumerationDocumentDto.councilId,
               yearModule.id,
             )
+            performance.mark('reserveNumerationRangeEnd')
+            performance.measure(
+              'reserveNumerationRange',
+              'reserveNumerationRange',
+              'reserveNumerationRangeEnd',
+            )
           }
 
+          performance.mark('createLastNumeration')
           const numeration = await this.createLastNumeration(
             createNumerationDocumentDto.number,
             createNumerationDocumentDto.councilId,
             yearModule.id,
           )
+          performance.mark('createLastNumerationEnd')
+          performance.measure(
+            'createLastNumeration',
+            'createLastNumeration',
+            'createLastNumerationEnd',
+          )
 
           return numeration
         }
 
+        performance.mark('getAvailableCouncilNumeration')
         this.verifyNumerationUsed(
           createNumerationDocumentDto.number,
           numerationsByCouncil,
+        )
+        performance.mark('getAvailableCouncilNumerationEnd')
+        performance.measure(
+          'verifyNumerationUsed',
+          'getAvailableCouncilNumeration',
+          'getAvailableCouncilNumerationEnd',
         )
         if (
           (!numerationsByCouncil || numerationsByCouncil.length === 0) &&
@@ -911,26 +1034,47 @@ export class NumerationDocumentService {
             createNumerationDocumentDto.number >
             numerationsByYearModule[0].number + 1
           ) {
+            performance.mark('reserveNumerationRange2')
             await this.reserveNumerationRange(
               numerationsByYearModule[0].number + 1,
               createNumerationDocumentDto.number - 1,
               createNumerationDocumentDto.councilId,
               yearModule.id,
             )
+            performance.mark('reserveNumerationRange2End')
+            performance.measure(
+              'reserveNumerationRange2',
+              'reserveNumerationRange2',
+              'reserveNumerationRange2End',
+            )
           }
 
+          performance.mark('createLastNumeration2')
           const numeration = await this.createLastNumeration(
             createNumerationDocumentDto.number,
             createNumerationDocumentDto.councilId,
             yearModule.id,
           )
+          performance.mark('createLastNumeration2End')
+          performance.measure(
+            'createLastNumeration2',
+            'createLastNumeration2',
+            'createLastNumeration2End',
+          )
 
           return numeration
         } else {
+          performance.mark('getAvailableCouncilNumeration3')
           const { data: availableCouncilNumeration } =
             await this.getAvailableCouncilNumeration(
               createNumerationDocumentDto.councilId,
             )
+          performance.mark('getAvailableCouncilNumeration3End')
+          performance.measure(
+            'getAvailableCouncilNumeration3',
+            'getAvailableCouncilNumeration3',
+            'getAvailableCouncilNumeration3End',
+          )
 
           if (
             createNumerationDocumentDto.number <
@@ -955,17 +1099,22 @@ export class NumerationDocumentService {
 
           numerationDocument.state = NumerationState.USED
 
+          performance.mark('save')
           const entity = await this.dataSource.manager.save(
             NumerationDocumentEntity,
             numerationDocument,
           )
+          performance.mark('saveEnd')
+          performance.measure('save', 'save', 'saveEnd')
+
+          performance.mark('end')
+          performance.measure('start', 'start', 'end')
 
           return new ApiResponseDto('Numeración creada exitosamente', entity)
         }
       }
     } catch (error) {
       console.error(error)
-      await queryRunner.rollbackTransaction()
 
       if (error instanceof NumerationConflict) {
         throw error
@@ -974,8 +1123,6 @@ export class NumerationDocumentService {
       if (error.status) throw new HttpException(error.message, error.status)
 
       throw new Error(error.message)
-    } finally {
-      await queryRunner.release()
     }
   }
 
