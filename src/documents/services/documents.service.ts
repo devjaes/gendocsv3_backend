@@ -293,7 +293,6 @@ export class DocumentsService {
       const finalDocument = await this.documentsRepository.save({
         id: savedDocument.id,
         driveId,
-        variables: JSON.stringify(formatVariables),
       })
       performance.mark('save-document-end')
       performance.measure(
@@ -301,6 +300,11 @@ export class DocumentsService {
         'save-document-start',
         'save-document-end',
       )
+
+      this.documentsRepository.save({
+        id: savedDocument.id,
+        variables: JSON.stringify(formatVariables),
+      })
 
       performance.mark('fin de creación de documento')
       performance.measure(
