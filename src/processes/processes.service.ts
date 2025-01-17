@@ -198,21 +198,12 @@ export class ProcessesService {
     }
 
     if (field != null && field !== '') {
-      const searchTerms = field.trim().split(/\s+/)
-
-      const whereConditions = searchTerms
-        .map((term, index) => {
-          const paramName = `searchTerm${index}`
-          return `processes.name ILIKE :${paramName}`
-        })
-        .join(' OR ')
-
-      const searchParams = searchTerms.reduce((acc, term, index) => {
-        acc[`searchTerm${index}`] = `%${term}%`
-        return acc
-      }, {})
-
-      qb.andWhere(`(${whereConditions})`, searchParams)
+      qb.andWhere(
+        '( (:name :: VARCHAR) IS NULL OR processes.name ILIKE :name  )',
+        {
+          name: `%${field}%`,
+        },
+      )
     }
 
     const count = await qb.getCount()
