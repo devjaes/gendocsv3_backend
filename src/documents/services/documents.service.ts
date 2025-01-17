@@ -188,7 +188,7 @@ export class DocumentsService {
             },
           })
 
-        functionariesData = this.variableService.getFunctionaryVariables(
+        functionariesData = await this.variableService.getFunctionaryVariables(
           documentFunctionariesSaved,
           savedDocument.numerationDocument.council,
         )
@@ -220,7 +220,6 @@ export class DocumentsService {
         studentData = this.variableService.getStudentVariables(savedDocument)
       }
 
-      await Promise.all([functionariesData, studentData])
       const [generalData, councilData, positionsData, customVariablesData] =
         await Promise.all([
           this.variableService.getGeneralVariables(savedDocument),
