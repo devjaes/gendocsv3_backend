@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common'
 import { CreateNumerationDocumentDto } from './dto/create-numeration-document.dto'
 import { InjectRepository } from '@nestjs/typeorm'
-import { DataSource, Not, Repository } from 'typeorm'
+import { DataSource, Repository } from 'typeorm'
 import { NumerationDocumentEntity } from './entities/numeration-document.entity'
 import { CouncilEntity } from '../councils/entities/council.entity'
 import { YearModuleEntity } from '../year-module/entities/year-module.entity'
@@ -1177,6 +1177,8 @@ export class NumerationDocumentService {
         .leftJoinAndSelect('numerationDocument.yearModule', 'yearModule')
         .leftJoinAndSelect('numerationDocument.council', 'council')
         .leftJoinAndSelect('council.module', 'module')
+        .leftJoinAndSelect('council.submoduleYearModule', 'submoduleYearModule')
+        .leftJoinAndSelect('submoduleYearModule.yearModule', 'yearModule2')
         .orderBy('numerationDocument.number', 'ASC')
         .getMany()
 
