@@ -146,7 +146,9 @@ export class CreateStudentDto {
 
   @ApiProperty({
     description: 'Creditos aprobados',
+    required: false,
   })
+  @IsOptional()
   @IsNumber()
   approvedCredits: number
 
