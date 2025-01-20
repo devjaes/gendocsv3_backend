@@ -533,7 +533,7 @@ export class DocumentsService {
   }
 
   async findAll(filters: DocumentFiltersDto) {
-    const { moduleId, limit, page, order } = filters
+    const { moduleId, limit, page, order = 'DESC' } = filters
 
     const skip = (page - 1) * limit
 
@@ -611,10 +611,7 @@ export class DocumentsService {
           })
         }
       }
-      qb.orderBy(
-        filters.orderBy ? `document.${filters.orderBy}` : 'document.createdAt',
-        order,
-      )
+      qb.orderBy('numerationDocument.number', order)
 
       const count = await qb.getCount()
 
