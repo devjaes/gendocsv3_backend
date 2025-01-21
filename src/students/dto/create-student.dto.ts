@@ -165,14 +165,16 @@ export class CreateStudentDto {
   @ApiProperty({
     description: 'Título de bachiller del estudiante',
   })
+  @IsOptional()
   @IsString({
     message: 'bachelorDegree is required',
   })
-  bachelorDegree: string
+  bachelorDegree?: string
 
   @ApiProperty({
     description: 'Nombre de la institución educativa de bachillerato',
   })
+  @IsOptional()
   @IsString({
     message: 'Colegio de procedencia es requerido',
   })
