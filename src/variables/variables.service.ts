@@ -677,20 +677,22 @@ export class VariablesService {
       [DEFAULT_VARIABLE.ESTUDIANTE_TITULO]:
         document.student.gender === GENDER.FEMALE
           ? document.student.career.womenDegree
-          : document.student.career.menDegree,
+          : document.student.career.menDegree ?? '*NO POSEE TÍTULO',
       [DEFAULT_VARIABLE.ESTUDIANTE_FECHA_NACIMIENTO]: document.student.birthdate
         ? formatDateText(document.student.birthdate)
         : 'NO POSEE FECHA DE NACIMIENTO',
       [DEFAULT_VARIABLE.ESTUDIANTE_TITULO_UPPER]: (document.student.gender ===
       GENDER.FEMALE
         ? document.student.career.womenDegree
-        : document.student.career.menDegree
+        : document.student.career.menDegree ?? '*NO POSEE TÍTULO'
       ).toUpperCase(),
-      [DEFAULT_VARIABLE.COORDINADOR]: getFullName(
-        document.student.career.coordinator,
-      ),
-      [DEFAULT_VARIABLE.CANTON]: document.student.canton.name,
-      [DEFAULT_VARIABLE.PROVINCE]: document.student.canton.province.name,
+      [DEFAULT_VARIABLE.COORDINADOR]:
+        getFullName(document.student.career?.coordinator) ??
+        '*NO POSEE COORDINADOR',
+      [DEFAULT_VARIABLE.CANTON]:
+        document.student.canton?.name ?? '*NO POSEE CANTON',
+      [DEFAULT_VARIABLE.PROVINCE]:
+        document.student.canton?.province?.name ?? '*NO POSEE PROVINCIA',
     }
 
     return new ApiResponseDto(
