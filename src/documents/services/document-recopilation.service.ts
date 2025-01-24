@@ -254,23 +254,26 @@ export class DocumentRecopilationService {
 
     const councils = await this.dataSource.manager
       .getRepository(CouncilEntity)
-      .findAndCount({
-        where: {
-          submoduleYearModule: {
-            id: council.submoduleYearModule.id,
-          },
-        },
-        order: {
-          date: 'ASC',
-        },
+      .createQueryBuilder('council')
+      .leftJoinAndSelect('council.module', 'module')
+      .leftJoinAndSelect('council.submoduleYearModule', 'submoduleYearModule')
+      .leftJoinAndSelect('submoduleYearModule.yearModule', 'yearModule')
+      .leftJoinAndSelect('council.attendance', 'attendance')
+      .leftJoinAndSelect('attendance.functionary', 'functionary')
+      .leftJoinAndSelect('functionary.thirdLevelDegree', 'thirdLevelDegree')
+      .leftJoinAndSelect('functionary.fourthLevelDegree', 'fourthLevelDegree')
+      .where('submoduleYearModule.id = :submoduleYearModuleId', {
+        submoduleYearModuleId: council.submoduleYearModule.id,
       })
+      .orderBy('council.date', 'ASC')
+      .getMany()
 
-    const councilIndex = councils[0].findIndex((c) => c.id === councilId)
+    const councilIndex = councils.findIndex((c) => c.id === councilId)
 
     const recopilationNumber = councilIndex + 1
     const docCouncil = await this.filesService.createDocumentByParentIdAndCopy(
       // eslint-disable-next-line no-magic-numbers
-      `ACTA ${formatNumeration(recopilationNumber, 3)}/${
+      `ACTA ${formatNumeration(recopilationNumber, 4)}/${
         council.submoduleYearModule.yearModule.year
       } ${formatDateText(council.date).toUpperCase()}`,
       council.driveId,

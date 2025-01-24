@@ -1039,7 +1039,7 @@ export class VariablesService {
           ).functionary,
         ),
         // eslint-disable-next-line no-magic-numbers
-        [DEFAULT_VARIABLE.NUMACT]: formatNumeration(numdoc, 3),
+        [DEFAULT_VARIABLE.NUMACT]: formatNumeration(numdoc, 4),
         [DEFAULT_VARIABLE.FECHAUP]: formatDateText(council.date),
         [DEFAULT_VARIABLE.SESIONUP]: council.type.toUpperCase(),
         [DEFAULT_VARIABLE.SESION]: council.type.toLowerCase(),
