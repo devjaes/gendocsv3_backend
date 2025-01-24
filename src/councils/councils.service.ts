@@ -294,6 +294,9 @@ export class CouncilsService {
   async getById(id: number) {
     const council = await this.councilRepository
       .createQueryBuilder('councils')
+      .leftJoinAndSelect('councils.user', 'user')
+      .leftJoinAndSelect('councils.module', 'module')
+      .leftJoinAndSelect('councils.submoduleYearModule', 'submoduleYearModule')
       .leftJoinAndSelect('councils.attendance', 'attendance')
       .leftJoinAndSelect('attendance.functionary', 'functionary')
       .leftJoinAndSelect('attendance.student', 'student')
@@ -310,6 +313,9 @@ export class CouncilsService {
   async regenerateCouncilDocuments(id: number, updatedBy: number) {
     const council = await this.councilRepository
       .createQueryBuilder('councils')
+      .leftJoinAndSelect('councils.user', 'user')
+      .leftJoinAndSelect('councils.module', 'module')
+      .leftJoinAndSelect('councils.submoduleYearModule', 'submoduleYearModule')
       .leftJoinAndSelect('councils.attendance', 'attendance')
       .leftJoinAndSelect('attendance.functionary', 'functionary')
       .leftJoinAndSelect('attendance.student', 'student')
