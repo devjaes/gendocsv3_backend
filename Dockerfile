@@ -6,6 +6,7 @@ RUN apt-get update && apt-get install -y tzdata \
     python3 \
     python3-pip \
     build-essential \
+    netcat-traditional \
     && rm -rf /var/lib/apt/lists/*
 
 ENV TZ=America/Bogota
