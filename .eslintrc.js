@@ -27,7 +27,7 @@ module.exports = {
     'plugin:prettier/recommended',
     'prettier',
   ],
-  ignorePatterns: ['.eslintrc.js'],
+  ignorePatterns: ['.eslintrc.js', 'memory-monitor.js'],
   rules: {
     'filenames/match-regex': [
       'error',

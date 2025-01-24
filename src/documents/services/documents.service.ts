@@ -170,23 +170,23 @@ export class DocumentsService {
         )
 
         const documentFunctionariesSaved =
-          await this.documentFunctionaryRepository.find({
-            where: { document: { id: savedDocument.id } },
-            order: { order: 'ASC' },
-            relationLoadStrategy: 'join',
-            relations: {
-              functionary: true,
-              document: {
-                numerationDocument: {
-                  council: {
-                    attendance: {
-                      functionary: true,
-                    },
-                  },
-                },
-              },
-            },
-          })
+          await this.documentFunctionaryRepository
+            .createQueryBuilder('documentFunctionary')
+            .leftJoinAndSelect('documentFunctionary.functionary', 'functionary')
+            .leftJoinAndSelect('documentFunctionary.document', 'document')
+            .leftJoinAndSelect(
+              'document.numerationDocument',
+              'numerationDocument',
+            )
+            .leftJoinAndSelect('numerationDocument.council', 'council')
+            .leftJoinAndSelect('council.attendance', 'attendance')
+            .leftJoinAndSelect(
+              'attendance.functionary',
+              'attendance-functionary',
+            )
+            .where('document.id = :id', { id: savedDocument.id })
+            .orderBy('documentFunctionary.order', 'ASC')
+            .getMany()
 
         functionariesData = await this.variableService.getFunctionaryVariables(
           documentFunctionariesSaved,
@@ -197,18 +197,13 @@ export class DocumentsService {
       if (createDocumentDto.studentId) {
         const student = await this.dataSource.manager
           .getRepository(StudentEntity)
-          .findOne({
-            where: { id: createDocumentDto.studentId },
-            relationLoadStrategy: 'join',
-            relations: {
-              career: {
-                coordinator: true,
-              },
-              canton: {
-                province: true,
-              },
-            },
-          })
+          .createQueryBuilder('student')
+          .leftJoinAndSelect('student.career', 'career')
+          .leftJoinAndSelect('career.coordinator', 'coordinator')
+          .leftJoinAndSelect('student.canton', 'canton')
+          .leftJoinAndSelect('canton.province', 'province')
+          .where('student.id = :id', { id: createDocumentDto.studentId })
+          .getOne()
 
         // eslint-disable-next-line require-atomic-updates
         savedDocument.student = student
@@ -334,6 +329,10 @@ export class DocumentsService {
       console.error(error)
 
       throw new Error(error.message)
+    } finally {
+      if (obs) {
+        obs.disconnect()
+      }
     }
   }
 
