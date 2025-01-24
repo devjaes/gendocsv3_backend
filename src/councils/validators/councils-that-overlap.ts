@@ -28,6 +28,9 @@ export class CouncilsThatOverlapValidator extends Validator<CreateCouncilDto> {
         startDate: new Date(new Date(council.date).getTime() - TIMES.AN_HOUR),
         endDate: new Date(council.date),
       })
+      .andWhere('councils.module_id = :moduleId', {
+        moduleId: council.moduleId,
+      })
       .andWhere(
         `councils.id IN (
         SELECT council_attendance.council_id
