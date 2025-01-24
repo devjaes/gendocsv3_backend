@@ -1,33 +1,23 @@
-FROM node:20.10-alpine3.18
+FROM node:20.10-slim
 
 WORKDIR /app
 
-RUN apk add --no-cache tzdata
-
-ENV TZ=America/Bogota
-
-RUN cp /usr/share/zoneinfo/America/Bogota /etc/localtime
-
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y tzdata \
     python3 \
     python3-pip \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
+ENV TZ=America/Bogota
+RUN cp /usr/share/zoneinfo/America/Bogota /etc/localtime
+
 RUN ln -s /usr/bin/python3 /usr/bin/python
 
 COPY package*.json ./
-
-RUN npm ci --omiy=dev
-
+RUN npm ci --omit=dev
 COPY . .
-
 RUN npm run build
-
 COPY ./scripts/start.sh /app/start.sh
-
 RUN chmod +x /app/start.sh
-
 EXPOSE 3001
-
 CMD ["/app/start.sh"]
