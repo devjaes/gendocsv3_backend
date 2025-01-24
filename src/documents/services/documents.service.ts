@@ -173,6 +173,14 @@ export class DocumentsService {
           await this.documentFunctionaryRepository
             .createQueryBuilder('documentFunctionary')
             .leftJoinAndSelect('documentFunctionary.functionary', 'functionary')
+            .leftJoinAndSelect(
+              'functionary.thirdLevelDegree',
+              'thirdLevelDegreeFunctionary',
+            )
+            .leftJoinAndSelect(
+              'functionary.fourthLevelDegree',
+              'fourthLevelDegreeFunctionary',
+            )
             .leftJoinAndSelect('documentFunctionary.document', 'document')
             .leftJoinAndSelect(
               'document.numerationDocument',
@@ -184,6 +192,16 @@ export class DocumentsService {
               'attendance.functionary',
               'attendance-functionary',
             )
+            .leftJoinAndSelect(
+              'attendance-functionary.thirdLevelDegree',
+              'thirdLevelDegreeAttendance',
+            )
+            .leftJoinAndSelect(
+              'attendance-functionary.fourthLevelDegree',
+              'fourthLevelDegreeAttendance',
+            )
+            .leftJoinAndSelect('document.templateProcess', 'templateProcess')
+            .leftJoinAndSelect('document.user', 'user')
             .where('document.id = :id', { id: savedDocument.id })
             .orderBy('documentFunctionary.order', 'ASC')
             .getMany()
@@ -371,6 +389,8 @@ export class DocumentsService {
         'documentFunctionaries',
       )
       .leftJoinAndSelect('documentFunctionaries.functionary', 'functionary')
+      .leftJoinAndSelect('functionary.thirdLevelDegree', 'thirdLevelDegree')
+      .leftJoinAndSelect('functionary.fourthLevelDegree', 'fourthLevelDegree')
       .where('numerationDocument.council = :council', { council: council.id })
       .getMany()
 
