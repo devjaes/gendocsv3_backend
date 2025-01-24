@@ -5,6 +5,7 @@ import * as bodyParser from 'body-parser'
 import { ConfigService } from '@nestjs/config'
 import { Logger, ValidationPipe } from '@nestjs/common'
 import { HttpExceptionsMiddleware } from './core/middleware/http-exception'
+import * as heapdump from 'heapdump'
 
 const buildOptions = () =>
   new DocumentBuilder()
@@ -42,6 +43,14 @@ const bootstrap = async () => {
   const document = SwaggerModule.createDocument(app, options)
   SwaggerModule.setup('api', app, document)
 
+  const MB = 1024 * 1024
+  setInterval(() => {
+    const memory = process.memoryUsage()
+    if (memory.heapUsed > 2000 * MB) {
+      // 2GB
+      heapdump.writeSnapshot(`./heapdump-${Date.now()}.heapsnapshot`)
+    }
+  }, 60000) // Revisar cada minuto
   await app.listen(app.get(ConfigService).get('port'))
   logger.log(
     `Application listening on port ${app.get(ConfigService).get('port')}`,

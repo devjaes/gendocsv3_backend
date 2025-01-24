@@ -43,6 +43,8 @@ import { EmailService } from './email/services/email.service'
 import { EmailModule } from './email/email.module'
 import { BullModule } from '@nestjs/bull'
 import { NotificationsModule } from './notifications/notifications.module'
+import { PerformanceModule } from './performance/performance.module'
+import { ScheduleModule } from '@nestjs/schedule'
 
 dotenvConfig({ path: '.env' })
 
@@ -81,6 +83,7 @@ export default connectionSource
         port: +process.env.REDIS_PORT,
       },
     }),
+    ScheduleModule.forRoot(),
     LogModule,
     TerminusModule,
     HttpModule,
@@ -112,6 +115,7 @@ export default connectionSource
     DegreeCertificateAttendanceModule,
     EmailModule,
     NotificationsModule,
+    PerformanceModule,
   ],
   controllers: [AppController, FilesController],
   providers: [AppService, LoggerMiddleware, FilesService, EmailService],

@@ -292,10 +292,16 @@ export class CouncilsService {
   }
 
   async getById(id: number) {
-    const council = await this.councilRepository.findOne({
-      where: { id },
-      relations: ['attendance', 'attendance.functionary', 'attendance.student'],
-    })
+    const council = await this.councilRepository
+      .createQueryBuilder('councils')
+      .leftJoinAndSelect('councils.user', 'user')
+      .leftJoinAndSelect('councils.module', 'module')
+      .leftJoinAndSelect('councils.submoduleYearModule', 'submoduleYearModule')
+      .leftJoinAndSelect('councils.attendance', 'attendance')
+      .leftJoinAndSelect('attendance.functionary', 'functionary')
+      .leftJoinAndSelect('attendance.student', 'student')
+      .where('councils.id = :id', { id })
+      .getOne()
 
     if (!council) {
       throw new NotFoundException(`Council not found with id ${id}`)
@@ -305,10 +311,16 @@ export class CouncilsService {
   }
 
   async regenerateCouncilDocuments(id: number, updatedBy: number) {
-    const council = await this.councilRepository.findOne({
-      where: { id },
-      relations: ['attendance', 'attendance.functionary', 'attendance.student'],
-    })
+    const council = await this.councilRepository
+      .createQueryBuilder('councils')
+      .leftJoinAndSelect('councils.user', 'user')
+      .leftJoinAndSelect('councils.module', 'module')
+      .leftJoinAndSelect('councils.submoduleYearModule', 'submoduleYearModule')
+      .leftJoinAndSelect('councils.attendance', 'attendance')
+      .leftJoinAndSelect('attendance.functionary', 'functionary')
+      .leftJoinAndSelect('attendance.student', 'student')
+      .where('councils.id = :id', { id })
+      .getOne()
 
     if (!council) {
       throw new NotFoundException(`Consejo no encontrado con id ${id}`)
@@ -352,9 +364,10 @@ export class CouncilsService {
         let memberParam = {}
 
         if (item.isStudent) {
-          const student = await this.studentRepository.findOne({
-            where: { id: Number(item.member) },
-          })
+          const student = await this.studentRepository
+            .createQueryBuilder('students')
+            .where('students.id = :id', { id: Number(item.member) })
+            .getOne()
 
           if (!student) {
             throw new NotFoundException(
@@ -366,9 +379,10 @@ export class CouncilsService {
             student: { id: student.id },
           }
         } else {
-          const functionary = await this.functionaryRepository.findOne({
-            where: { id: Number(item.member) },
-          })
+          const functionary = await this.functionaryRepository
+            .createQueryBuilder('functionaries')
+            .where('functionaries.id = :id', { id: Number(item.member) })
+            .getOne()
 
           if (!functionary) {
             throw new NotFoundException(
@@ -381,13 +395,16 @@ export class CouncilsService {
           }
         }
 
-        const attendance = await this.councilAttendanceRepository.findOne({
-          where: {
-            council: { id },
+        const attendance = await this.councilAttendanceRepository
+          .createQueryBuilder('council_attendance')
+          .where('council_id = :id', { id })
+          .andWhere('position_name = :positionName', {
             positionName: item.positionName,
+          })
+          .andWhere('position_order = :positionOrder', {
             positionOrder: item.positionOrder,
-          },
-        })
+          })
+          .getOne()
 
         if (!attendance) {
           throw new NotFoundException(

@@ -429,7 +429,9 @@ export class VariablesService {
 
   async findAll() {
     try {
-      const variables = await this.variableRepository.find()
+      const variables = await this.variableRepository
+        .createQueryBuilder('variable')
+        .getMany()
 
       return new ApiResponseDto('Variables encontradas con éxito', variables)
     } catch (error) {
@@ -484,9 +486,7 @@ export class VariablesService {
     }
   }
 
-  async getGeneralVariables(
-    document: DocumentEntity | DegreeCertificateEntity,
-  ) {
+  getGeneralVariables(document: DocumentEntity | DegreeCertificateEntity) {
     try {
       const variables = {
         [DEFAULT_VARIABLE.CREADOPOR]: `${document.user.firstName} ${document.user.firstLastName}`,
@@ -508,7 +508,7 @@ export class VariablesService {
     }
   }
 
-  async getCouncilVariables(document: DocumentEntity) {
+  getCouncilVariables(document: DocumentEntity) {
     try {
       const functionary = document.numerationDocument.council.attendance.find(
         (attendance) => attendance.positionOrder === 1,
@@ -701,7 +701,7 @@ export class VariablesService {
     )
   }
 
-  async getFunctionaryVariables(
+  getFunctionaryVariables(
     documentFunctionaries: DocumentFunctionaryEntity[],
     _council: CouncilEntity,
   ) {
@@ -1039,7 +1039,7 @@ export class VariablesService {
           ).functionary,
         ),
         // eslint-disable-next-line no-magic-numbers
-        [DEFAULT_VARIABLE.NUMACT]: formatNumeration(numdoc, 3),
+        [DEFAULT_VARIABLE.NUMACT]: formatNumeration(numdoc, 4),
         [DEFAULT_VARIABLE.FECHAUP]: formatDateText(council.date),
         [DEFAULT_VARIABLE.SESIONUP]: council.type.toUpperCase(),
         [DEFAULT_VARIABLE.SESION]: council.type.toLowerCase(),
@@ -1144,16 +1144,16 @@ export class VariablesService {
     docFunc: DocumentFunctionaryEntity,
     council: CouncilEntity,
   ) {
-    const attendance = await CouncilAttendanceEntity.findOne({
-      where: {
-        functionary: {
-          id: docFunc.functionary.id,
-        },
-        council: {
-          id: council.id,
-        },
-      },
-    })
+    const attendance = await CouncilAttendanceEntity.createQueryBuilder(
+      'attendance',
+    )
+      .leftJoinAndSelect('attendance.functionary', 'functionary')
+      .leftJoinAndSelect('attendance.council', 'council')
+      .where('functionary.id = :functionaryId', {
+        functionaryId: docFunc.functionary.id,
+      })
+      .andWhere('council.id = :councilId', { councilId: council.id })
+      .getOne()
 
     return attendance.positionName
   }
