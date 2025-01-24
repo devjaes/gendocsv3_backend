@@ -1132,15 +1132,17 @@ export class NumerationDocumentService {
 
   async documentRemoved(document: DocumentEntity) {
     try {
-      const numeration = await this.numerationDocumentRepository.findOneOrFail({
-        where: { id: document.numerationDocument.id },
-      })
+      const numeration = await this.numerationDocumentRepository
+        .createQueryBuilder('numerationDocument')
+        .where('numerationDocument.id = :id', {
+          id: document.numerationDocument.id,
+        })
+        .getOne()
 
       if (!numeration) {
         throw new NumerationNotFound('Numeración no encontrada')
       }
 
-      console.log({ number: numeration.number })
       numeration.state = NumerationState.ENQUEUED
       const numerationChanged = await numeration.save()
 

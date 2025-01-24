@@ -714,12 +714,21 @@ export class DocumentsService {
 
   async remove(id: number) {
     try {
-      const document = await this.documentsRepository.findOne({
-        where: { id },
-        relations: {
-          numerationDocument: true,
-        },
-      })
+      const document = await this.documentsRepository
+        .createQueryBuilder('document')
+        .leftJoinAndSelect('document.numerationDocument', 'numerationDocument')
+        .leftJoinAndSelect('numerationDocument.council', 'council')
+        .leftJoinAndSelect('council.module', 'module')
+        .leftJoinAndSelect('document.user', 'user')
+        .leftJoinAndSelect('document.student', 'student')
+        .leftJoinAndSelect('document.templateProcess', 'templateProcess')
+        .leftJoinAndSelect(
+          'document.documentFunctionaries',
+          'documentFunctionaries',
+        )
+        .leftJoinAndSelect('documentFunctionaries.functionary', 'functionarys')
+        .where('document.id = :id', { id })
+        .getOne()
 
       if (!document) {
         throw new NotFoundException('Documento no encontrado')
