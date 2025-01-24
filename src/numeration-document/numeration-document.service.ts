@@ -1123,6 +1123,10 @@ export class NumerationDocumentService {
       if (error.status) throw new HttpException(error.message, error.status)
 
       throw new Error(error.message)
+    } finally {
+      if (obs) {
+        obs.disconnect()
+      }
     }
   }
 

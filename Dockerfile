@@ -8,6 +8,14 @@ ENV TZ=America/Bogota
 
 RUN cp /usr/share/zoneinfo/America/Bogota /etc/localtime
 
+RUN apt-get update && apt-get install -y \
+    python3 \
+    python3-pip \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN ln -s /usr/bin/python3 /usr/bin/python
+
 COPY package*.json ./
 
 RUN npm ci --omiy=dev
