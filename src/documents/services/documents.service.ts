@@ -701,12 +701,6 @@ export class DocumentsService {
   async findAllByStudent(id: number) {
     const documents = await this.documentsRepository
       .createQueryBuilder('document')
-      .select([
-        'document.id',
-        'document.createdAt',
-        'document.driveId',
-        'document.description',
-      ])
       .leftJoinAndSelect('document.numerationDocument', 'numerationDocument')
       .leftJoinAndSelect('numerationDocument.council', 'council')
       .leftJoinAndSelect('council.module', 'module')
@@ -725,6 +719,7 @@ export class DocumentsService {
       )
       .leftJoinAndSelect('documentFunctionaries.functionary', 'functionarys')
       .where('document.student.id = :id', { id })
+      .orderBy('numerationDocument.number', 'ASC')
       .getMany()
 
     return new ApiResponseDto('Lista de documentos', {
