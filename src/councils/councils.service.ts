@@ -276,7 +276,7 @@ export class CouncilsService {
     }
 
     const councils = await qb
-      .orderBy('councils.id', 'ASC')
+      .orderBy('councils.date', 'DESC')
       .take(limit)
       .skip(offset)
       .getMany()

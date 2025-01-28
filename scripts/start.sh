@@ -32,7 +32,7 @@ fi
 
 # Monitoreo continuo en segundo plano
 while true; do
-    sleep 300 # Verificamos cada 5 minutos
+    sleep 30000 # Verificamos cada 5 minutos
     
     if [ -f /var/run/app.pid ]; then
         pid=$(cat /var/run/app.pid)
