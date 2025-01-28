@@ -141,7 +141,7 @@ export class DocumentRecopilationService {
 
     const savedDownloadedDocumentPath =
       await this.filesService.saveDownloadedDocument(
-        `${document.numerationDocument.number.toString()}.docx`,
+        `${formatNumeration(document.numerationDocument.number, 4)}.docx`,
         tempDocxPath,
         blob,
       )
@@ -161,7 +161,7 @@ export class DocumentRecopilationService {
       [DEFAULT_VARIABLE.SEPARATOR_NUMDOC]: formatNumeration(
         document.numerationDocument.number,
         // eslint-disable-next-line no-magic-numbers
-        3,
+        4,
       ),
       [DEFAULT_VARIABLE.SEPARATOR_YEAR]:
         document.numerationDocument.council.submoduleYearModule.yearModule.year.toString(),
@@ -170,7 +170,10 @@ export class DocumentRecopilationService {
     const replacedSeparator =
       await this.filesService.copyAndReplaceTextOnLocalDocument(
         document.id,
-        `${document.numerationDocument.number.toString()}-separator.docx`,
+        `${formatNumeration(
+          document.numerationDocument.number,
+          4,
+        )}-separator.docx`,
         replaceEntries,
         separatorPath,
         tempDocxPath,
@@ -194,13 +197,38 @@ export class DocumentRecopilationService {
 
     await this.filesService.resolveDirectory(generatedCouncilPath)
 
+    // documents end with {number}.dock, so we sorted by number
+    // number is in format {0001}.docx
+    // path is absolute path
     const documents = await this.filesService.getFilesFromDirectory(
       tempDocxPath,
     )
 
+    const documentsPaths = documents.filter((doc) => !doc.includes('separator'))
+    const separatorPaths = documents.filter((doc) => doc.includes('separator'))
+
+    const sortedDocuments = documentsPaths.sort((a, b) => {
+      const docAName = a.slice(a.length - 10, a.length - 6)
+      const docBName = b.slice(b.length - 10, b.length - 6)
+      return parseInt(docAName) - parseInt(docBName)
+    })
+
+    const sortedSeparator = separatorPaths.sort((a, b) => {
+      const docAName = a.slice(a.length - 20, a.length - 6)
+      const docBName = b.slice(b.length - 20, b.length - 6)
+      return parseInt(docAName) - parseInt(docBName)
+    })
+
+    const sortedPaths = sortedSeparator.reduce((acc, separator, index) => {
+      if (index === 0) {
+        return [...acc, separator, sortedDocuments[index]]
+      }
+      return [...acc, separator, sortedDocuments[index]]
+    }, [])
+
     const mergedDocumentPath = await this.filesService.mergeDocuments(
       `${council.name}-Recopilación-${formatDateText(council.date)}`,
-      documents,
+      sortedPaths,
       generatedCouncilPath,
     )
 
@@ -317,14 +345,12 @@ export class DocumentRecopilationService {
   async downloadMergedDocument(councilId: number): Promise<Buffer> {
     const council = await this.dataSource.manager
       .getRepository(CouncilEntity)
-      .findOne({
-        where: { id: councilId },
-        relations: {
-          submoduleYearModule: {
-            yearModule: true,
-          },
-        },
-      })
+      .createQueryBuilder('council')
+      .leftJoinAndSelect('council.submoduleYearModule', 'submoduleYearModule')
+      .leftJoinAndSelect('submoduleYearModule.yearModule', 'yearModule')
+      .leftJoinAndSelect('council.module', 'module')
+      .where('council.id = :councilId', { councilId })
+      .getOne()
 
     if (!council) {
       throw new NotFoundException('Consejo no encontrado')
@@ -370,6 +396,7 @@ export class DocumentRecopilationService {
       )
       .leftJoinAndSelect('documentFunctionaries.functionary', 'functionarys')
       .where('council.id = :councilId', { councilId })
+      .orderBy('numerationDocument.number', 'ASC')
       .getMany()
 
     if (!documents) {
