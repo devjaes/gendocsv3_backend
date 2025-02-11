@@ -62,17 +62,24 @@ export class VariablesService {
   async showVariables() {
     const positions = await this.dataSource.manager
       .getRepository(PositionEntity)
-      .find({
-        relationLoadStrategy: 'join',
-        relations: {
-          functionary: true,
-        },
-      })
+      .createQueryBuilder('position')
+      .leftJoinAndSelect('position.functionary', 'functionary')
+      .leftJoinAndSelect('functionary.thirdLevelDegree', 'thirdLevelDegree')
+      .leftJoinAndSelect('functionary.fourthLevelDegree', 'fourthLevelDegree')
+      .getMany()
 
-    const positionsVariables = positions.map((position) => ({
-      variable: position.variable,
-      example: getFullName(position.functionary),
-    }))
+    const positionsVariables = positions
+      .map((position) => [
+        {
+          variable: position.variable,
+          example: getFullName(position.functionary),
+        },
+        {
+          variable: `${position.variable.replace('}}', '_CON_TITU}}')}`,
+          example: getFullNameWithTitles(position.functionary),
+        },
+      ])
+      .flat()
 
     const studentVariables = [
       {
@@ -1100,15 +1107,18 @@ export class VariablesService {
       const qb = this.dataSource
         .createQueryBuilder(PositionEntity, 'position')
         .leftJoinAndSelect('position.functionary', 'functionary')
+        .leftJoinAndSelect('functionary.thirdLevelDegree', 'thirdLevelDegree')
+        .leftJoinAndSelect('functionary.fourthLevelDegree', 'fourthLevelDegree')
 
       const positions = await qb.getMany()
 
-      positions.forEach(
-        (position) =>
-          // eslint-disable-next-line no-extra-parens
-          (variables[position.variable] = getFullNameWithTitles(
-            position.functionary,
-          )),
+      positions.forEach((position) =>
+        // eslint-disable-next-line no-extra-parens
+        {
+          variables[position.variable] = getFullName(position.functionary)
+          variables[`${position.variable.replace('}}', '_CON_TITU')}`] =
+            getFullNameWithTitles(position.functionary)
+        },
       )
 
       return new ApiResponseDto(
