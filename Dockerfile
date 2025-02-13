@@ -14,6 +14,9 @@ RUN cp /usr/share/zoneinfo/America/Bogota /etc/localtime
 
 RUN ln -s /usr/bin/python3 /usr/bin/python
 
+# Install vim
+RUN apt-get update && apt-get install -y vim
+
 COPY package*.json ./
 RUN npm ci --omit=dev
 COPY . .

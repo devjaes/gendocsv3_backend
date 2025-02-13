@@ -405,6 +405,7 @@ export class CertificateBulkService {
       }
 
       this.logger.error(error)
+      console.error(error)
       errors.push(
         new ExceptionSimpleDetail(
           'No se pudo crear el certificado de grado',

@@ -38,12 +38,12 @@ gcStats.on('stats', (stats) => {
     const efficiency = gcHistory.getAverageEfficiency();
     const pauseMS = stats.pause;
     
-    console.log('Estadísticas del GC:', {
-        tipo: stats.gctype,
-        duracionPausa: `${pauseMS}ms`,
-        memoriaLiberada: `${Math.round(stats.diff.usedHeapSize / 1024 / 1024)}MB`,
-        eficiencia: `${Math.round(efficiency * 100) / 100} MB/ms`
-    });
+    // console.log('Estadísticas del GC:', {
+    //     tipo: stats.gctype,
+    //     duracionPausa: `${pauseMS}ms`,
+    //     memoriaLiberada: `${Math.round(stats.diff.usedHeapSize / 1024 / 1024)}MB`,
+    //     eficiencia: `${Math.round(efficiency * 100) / 100} MB/ms`
+    // });
 
     // Si detectamos que el GC está siendo ineficiente, iniciamos limpieza adicional
     if (pauseMS > 100 && efficiency < 0.5) {
@@ -58,7 +58,7 @@ async function performSoftCleanup() {
         
         // Solo forzamos GC si las últimas recolecciones han sido eficientes
         if (global.gc && gcHistory.getAverageEfficiency() > 0.1) {
-            console.log('Iniciando limpieza de memoria...');
+            // console.log('Iniciando limpieza de memoria...');
             global.gc(true);
         }
 
@@ -109,11 +109,11 @@ async function performSoftCleanup() {
         const finalMemory = process.memoryUsage().heapUsed;
         const freedMemory = initialMemory - finalMemory;
         
-        console.log('Resultado de limpieza:', {
-            memoriaInicial: `${Math.round(initialMemory / 1024 / 1024)}MB`,
-            memoriaFinal: `${Math.round(finalMemory / 1024 / 1024)}MB`,
-            memoriaLiberada: `${Math.round(freedMemory / 1024 / 1024)}MB`
-        });
+        // console.log('Resultado de limpieza:', {
+        //     memoriaInicial: `${Math.round(initialMemory / 1024 / 1024)}MB`,
+        //     memoriaFinal: `${Math.round(finalMemory / 1024 / 1024)}MB`,
+        //     memoriaLiberada: `${Math.round(freedMemory / 1024 / 1024)}MB`
+        // });
 
     } catch (error) {
         console.error('Error durante la limpieza suave:', error);
@@ -139,4 +139,4 @@ setInterval(async () => {
 
         await performSoftCleanup();
     }
-}, 60000);
+}, 600000);
