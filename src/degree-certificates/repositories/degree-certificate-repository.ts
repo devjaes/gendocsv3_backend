@@ -105,9 +105,9 @@ export class DegreeCertificateRepository extends Repository<DegreeCertificateEnt
       )
       .leftJoinAndSelect('degreeCertificate.room', 'room')
       .leftJoinAndSelect('degreeCertificate.user', 'user')
-      .where(options.where)
+      .where(options?.where)
 
-    if (filters.field) {
+    if (filters?.field) {
       query.andWhere(
         "( (:term :: VARCHAR ) IS NULL OR CONCAT_WS(' ', student.firstName, student.secondName, student.firstLastName, student.secondLastName) ILIKE :term OR student.dni ILIKE :term )",
         {
@@ -116,20 +116,20 @@ export class DegreeCertificateRepository extends Repository<DegreeCertificateEnt
       )
     }
 
-    if (filters.startDate && filters.endDate) {
+    if (filters?.startDate && filters?.endDate) {
       if (filters.startDate && !filters.endDate) {
         query.andWhere('degreeCertificate.presentationDate >= :startDate', {
           startDate: filters.startDate,
         })
       }
-      if (!filters.startDate && filters.endDate) {
+      if (!filters?.startDate && filters?.endDate) {
         const endDate = new Date(filters.endDate)
         endDate.setHours(23, 59, 59, 999)
         query.andWhere('degreeCertificate.presentationDate <= :endDate', {
           endDate,
         })
       }
-      if (filters.startDate && filters.endDate) {
+      if (filters?.startDate && filters?.endDate) {
         const endDate = new Date(filters.endDate)
         endDate.setHours(23, 59, 59, 999)
         query.andWhere(
@@ -144,13 +144,13 @@ export class DegreeCertificateRepository extends Repository<DegreeCertificateEnt
 
     const countQuery = await query.getCount()
 
-    if (options.order) {
+    if (options?.order) {
       query.setFindOptions({
         order: options.order,
       })
     }
 
-    if (options.take && (options.skip || options.skip === 0)) {
+    if (options?.take && (options.skip || options.skip === 0)) {
       query.take(options.take)
       query.skip(options.skip)
     }
